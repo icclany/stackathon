@@ -1,0 +1,17 @@
+{
+  "name": "threex.oimo",
+  "main": "threex.oimo.js",
+  "homepage": "https://github.com/jeromeetienne/threex.oimo",
+  "authors": [
+    "Jason Unger <jasonscottunger@gmail.com>"
+  ],
+  "description": "",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
