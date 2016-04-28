@@ -164,8 +164,8 @@
 	// 	console.log(event.clientY);
 	// }, false)
 	onRenderFcts.push(function(delta, now){
-		camera.position.x += (mouse.x*500 - camera.position.x) * (delta*3)
-		camera.position.y += (mouse.y*500 - (camera.position.y - 5)) * (delta*3)
+		camera.position.x += (mouse.x*50 - camera.position.x) * (delta*3)
+		camera.position.y += (mouse.y*50 - (camera.position.y - 5)) * (delta*3)
 		camera.lookAt( scene.position )
 	})
 
