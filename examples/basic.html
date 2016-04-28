@@ -57,15 +57,15 @@
                     //////////////////////////////////////////////////////////////////////////////////
                     //		Sandbags
                     //////////////////////////////////////////////////////////////////////////////////
-                    // if( Math.random() < 0.05 ){
+                    if( Math.random() < 0.05 ){
                     var width = 5;
                     var height = 5;
                     var depth = 1.5;
                     var geometry = new THREE.BoxGeometry(width, height, depth)
-                        // }else{
-                        // 	var radius	= 3 + (Math.random()-0.5)*2
-                        // 	var geometry	= new THREE.SphereGeometry( radius )
-                        // }
+                        }else{
+                        	var radius	= 3 + (Math.random()-0.5)*2
+                        	var geometry	= new THREE.SphereGeometry( radius )
+                        }
 
                     var material = new THREE.MeshNormalMaterial()
 
