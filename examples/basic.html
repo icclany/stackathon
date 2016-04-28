@@ -158,11 +158,11 @@
 	//		Camera Controls							//
 	//////////////////////////////////////////////////////////////////////////////////
 	var mouse	= {x : 0, y : 0.95}
-	document.addEventListener('mousemove', function(event){
-		mouse.x	= (event.clientX / window.innerWidth ) - 0.5
-		mouse.y	= (event.clientY / window.innerHeight) - 0.5
-		console.log(event.clientY);
-	}, false)
+	// document.addEventListener('mousemove', function(event){
+	// 	mouse.x	= (event.clientX / window.innerWidth ) - 0.5
+	// 	mouse.y	= (event.clientY / window.innerHeight) - 0.5
+	// 	console.log(event.clientY);
+	// }, false)
 	onRenderFcts.push(function(delta, now){
 		camera.position.x += (mouse.x*500 - camera.position.x) * (delta*3)
 		camera.position.y += (mouse.y*500 - (camera.position.y - 5)) * (delta*3)
