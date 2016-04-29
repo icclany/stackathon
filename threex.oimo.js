@@ -116,6 +116,7 @@ THREEx.Oimo.Stats	= function(world){
 	domElement.style.left		= '10px'
 	domElement.style.width		= '400px'
 	domElement.style.height		= '400px'
+	domElement.innerHTML = world.performance.show();
 
 	// update periodically the stats DOMElement
 	var fps=0, time, time_prev=0, fpsint = 0;

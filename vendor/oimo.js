@@ -6,16 +6,16 @@
  * @author LoTh / http://3dflashlo.wordpress.com/
  */
  
-var OIMO = { REVISION: 'DEV.1.1.2a' };
+ var OIMO = { REVISION: 'DEV.1.1.2a' };
 
-OIMO.SHAPE_SPHERE = 0x1;
-OIMO.SHAPE_BOX = 0x2;
+ OIMO.SHAPE_SPHERE = 0x1;
+ OIMO.SHAPE_BOX = 0x2;
 
-OIMO.WORLD_SCALE = 100;
-OIMO.INV_SCALE = 0.01;
+ OIMO.WORLD_SCALE = 100;
+ OIMO.INV_SCALE = 0.01;
 
-OIMO.TO_RAD = Math.PI / 180;
-OIMO.TwoPI = 2.0 * Math.PI;
+ OIMO.TO_RAD = Math.PI / 180;
+ OIMO.TwoPI = 2.0 * Math.PI;
 
 // Global identification of next shape.
 // This will be incremented every time a shape is created.
@@ -35,8 +35,8 @@ OIMO.World = function(TimeStep, BroadPhaseType, Iterations, NoStat){
     // The number of iterations for constraint solvers.
     this.numIterations = Iterations || 8;
      // It is a wide-area collision judgment that is used in order to reduce as much as possible a detailed collision judgment.
-    var broadPhaseType = BroadPhaseType || 2;
-    switch(broadPhaseType){
+     var broadPhaseType = BroadPhaseType || 2;
+     switch(broadPhaseType){
         case 1: this.broadPhase=new OIMO.BruteForceBroadPhase(); break;
         case 2: default: this.broadPhase=new OIMO.SAPBroadPhase(); break;
         case 3: this.broadPhase=new OIMO.DBVTBroadPhase(); break;
@@ -65,7 +65,7 @@ OIMO.World = function(TimeStep, BroadPhaseType, Iterations, NoStat){
     // The number of simulation islands.
     this.numIslands=0;
     
-   
+
     // The gravity in the world.
     this.gravity=new OIMO.Vec3(0,-9.80665,0);
 
@@ -85,7 +85,7 @@ OIMO.World = function(TimeStep, BroadPhaseType, Iterations, NoStat){
     this.detectors[OIMO.SHAPE_SPHERE][OIMO.SHAPE_BOX]=new OIMO.SphereBoxCollisionDetector(false);
     this.detectors[OIMO.SHAPE_BOX][OIMO.SHAPE_SPHERE]=new OIMO.SphereBoxCollisionDetector(true);
     this.detectors[OIMO.SHAPE_BOX][OIMO.SHAPE_BOX]=new OIMO.BoxBoxCollisionDetector();
- 
+
     this.randX=65535;
     this.randA=98765;
     this.randB=123456789;
@@ -99,12 +99,12 @@ OIMO.World = function(TimeStep, BroadPhaseType, Iterations, NoStat){
     this.islandConstraints.length = this.maxIslandConstraints;
 
 };
-
+var score = {red: 0, yellow: 0};
 OIMO.World.prototype = {
     constructor: OIMO.World,
     /**
     * Reset the randomizer and remove all rigid bodies, shapes, joints and any object from the world.
-	*/
+    */
     clear:function(){
         this.randX=65535;
         while(this.joints!==null){
@@ -147,37 +147,37 @@ OIMO.World.prototype = {
         remove.awake();
         var js=remove.jointLink;
         while(js!=null){
-	        var joint=js.joint;
-	        js=js.next;
-	        this.removeJoint(joint);
-        }
-        for(var shape=rigidBody.shapes; shape!==null; shape=shape.next){
-            this.removeShape(shape);
-        }
-        var prev=remove.prev;
-        var next=remove.next;
-        if(prev!==null) prev.next=next;
-        if(next!==null) next.prev=prev;
-        if(this.rigidBodies==remove) this.rigidBodies=next;
-        remove.prev=null;
-        remove.next=null;
-        remove.parent=null;
-        this.numRigidBodies--;
-    },
-    getByName:function(name){
-        var result = null;
-        var body=this.rigidBodies;
-        while(body!==null){
-            if(body.name!== " " && body.name === name) result = body;
-            body=body.next;
-        }
-        var joint=this.joints;
-        while(joint!==null){
-            if(joint.name!== "" && joint.name === name) result = joint;
-            joint=joint.next;
-        }
-        return result;
-    },
+           var joint=js.joint;
+           js=js.next;
+           this.removeJoint(joint);
+       }
+       for(var shape=rigidBody.shapes; shape!==null; shape=shape.next){
+        this.removeShape(shape);
+    }
+    var prev=remove.prev;
+    var next=remove.next;
+    if(prev!==null) prev.next=next;
+    if(next!==null) next.prev=prev;
+    if(this.rigidBodies==remove) this.rigidBodies=next;
+    remove.prev=null;
+    remove.next=null;
+    remove.parent=null;
+    this.numRigidBodies--;
+},
+getByName:function(name){
+    var result = null;
+    var body=this.rigidBodies;
+    while(body!==null){
+        if(body.name!== " " && body.name === name) result = body;
+        body=body.next;
+    }
+    var joint=this.joints;
+    while(joint!==null){
+        if(joint.name!== "" && joint.name === name) result = joint;
+        joint=joint.next;
+    }
+    return result;
+},
 
     /**
     * I'll add a shape to the world..
@@ -250,30 +250,47 @@ OIMO.World.prototype = {
     /**
     * I will proceed only time step seconds time of World.
     */
-    step:function(){
+    step: function() {
         var time0, time1, time2, time3;
 
-        if(!this.isNoStat) time0=Date.now();
+        if (!this.isNoStat) time0 = Date.now();
 
-        var body=this.rigidBodies;
+        var body = this.rigidBodies;
 
-        while(body!==null){
-            body.addedToIsland=false;
-            if(body.sleeping){
-                if( body.linearVelocity.testZero() || body.angularVelocity.testZero() || body.position.testDiff(body.sleepPosition) || body.orientation.testDiff(body.sleepOrientation)){ body.awake(); } // awake the body
-                /*var lv=body.linearVelocity;
-                var av=body.angularVelocity;
-                var p=body.position;
-                var sp=body.sleepPosition;
-                var o=body.orientation;
-                var so=body.sleepOrientation;
-               
-                if( lv.x!==0 || lv.y!==0 || lv.z!==0 || av.x!==0 || av.y!==0 || av.z!==0 ||
-                p.x!==sp.x || p.y!==sp.y || p.z!==sp.z ||
-                o.s!==so.s || o.x!==so.x || o.y!==so.y || o.z!==so.z
-                ){ body.awake(); }*/
+        while (body !== null) {
+            body.addedToIsland = false;
+            if (body.sleeping && body.name.length) {
+                console.log(body.name, body);
+                var p = body.position;
+                var sp = body.sleepPosition;
+                if (p.x === sp.x || p.y === sp.y || p.z === sp.z) {
+                    if (body.sleepPosition.x < .2 && body.sleepPosition.x > -.2) {
+                        if (body.sleepPosition.z < .402 && body.sleepPosition.z > -.295) {
+                            // In hole
+                            if (body.sleepPosition.z < 0 && body.sleepPosition.z > -.2) {
+                                if (body.sleepPosition.x < .06 && body.sleepPosition.x > -.06) {
+                                    score[body.name.slice(0,-4)] += 3;
+
+                                } else score[body.name.slice(0,-4)]++;
+                            } else score[body.name.slice(0,-4)]++;
+                            console.log(score);
+                            body.addedToIsland = true;
+                        }
+                    }
+                }
+                // if (body.linearVelocity.testZero() || body.angularVelocity.testZero() || body.position.testDiff(body.sleepPosition) || body.orientation.testDiff(body.sleepOrientation)) { body.awake(); } // awake the body
+                // var lv = body.linearVelocity;
+                // var av = body.angularVelocity;
+                
+                // var o = body.orientation;
+                // var so = body.sleepOrientation;
+
+                
+                // body.allowSleep = false;
+                // body.sleeping = false;
+                // // body.awake();
             }
-            body=body.next;
+            body = body.next;
         }
 
         
@@ -290,7 +307,7 @@ OIMO.World.prototype = {
         var numPairs=this.broadPhase.numPairs;
         var i = numPairs;
         //do{
-        while(i--){
+            while(i--){
         //for(var i=0, l=numPairs; i<l; i++){
             var pair=pairs[i];
             var s1;
@@ -336,31 +353,31 @@ OIMO.World.prototype = {
                 var aabb1=contact.shape1.aabb;
                 var aabb2=contact.shape2.aabb;
                 if(
-	                aabb1.minX>aabb2.maxX || aabb1.maxX<aabb2.minX ||
-	                aabb1.minY>aabb2.maxY || aabb1.maxY<aabb2.minY ||
-	                aabb1.minZ>aabb2.maxZ || aabb1.maxZ<aabb2.minZ
-                ){
+                   aabb1.minX>aabb2.maxX || aabb1.maxX<aabb2.minX ||
+                   aabb1.minY>aabb2.maxY || aabb1.maxY<aabb2.minY ||
+                   aabb1.minZ>aabb2.maxZ || aabb1.maxZ<aabb2.minZ
+                   ){
                     var next=contact.next;
-                    this.removeContact(contact);
-                    contact=next;
-                    continue;
-                }
+                this.removeContact(contact);
+                contact=next;
+                continue;
             }
-            var b1=contact.body1;
-            var b2=contact.body2;
-            if(b1.isDynamic && !b1.sleeping || b2.isDynamic && !b2.sleeping){
-                contact.updateManifold();
-            }
-            this.numContactPoints+=contact.manifold.numPoints;
-            contact.persisting=false;
-            contact.constraint.addedToIsland=false;
-            contact=contact.next;
         }
+        var b1=contact.body1;
+        var b2=contact.body2;
+        if(b1.isDynamic && !b1.sleeping || b2.isDynamic && !b2.sleeping){
+            contact.updateManifold();
+        }
+        this.numContactPoints+=contact.manifold.numPoints;
+        contact.persisting=false;
+        contact.constraint.addedToIsland=false;
+        contact=contact.next;
+    }
 
-        if(!this.isNoStat){
-            time3=Date.now();
-            this.performance.narrowPhaseTime=time3-time2;
-        }
+    if(!this.isNoStat){
+        time3=Date.now();
+        this.performance.narrowPhaseTime=time3-time2;
+    }
 
         //------------------------------------------------------
         //   SOLVE ISLANDS
@@ -407,11 +424,11 @@ OIMO.World.prototype = {
                 }
                 if(this.calSleep(base)){
                     base.sleepTime+=this.timeStep;
-                if(base.sleepTime>0.5){
-                    base.sleep();
-                }else{
-                    base.updatePosition(this.timeStep);
-                }
+                    if(base.sleepTime>0.5){
+                        base.sleep();
+                    }else{
+                        base.updatePosition(this.timeStep);
+                    }
                 }else{
                     base.sleepTime=0;
                     base.updatePosition(this.timeStep);
@@ -434,7 +451,7 @@ OIMO.World.prototype = {
                 // add rigid body to the island
                 this.islandRigidBodies[islandNumRigidBodies++]=body;
                 if(body.isStatic){
-                continue;
+                    continue;
                 }
                 // search connections
                 for(var cs=body.contactLink; cs!==null; cs=cs.next){
@@ -448,7 +465,7 @@ OIMO.World.prototype = {
                     constraint.addedToIsland=true;
                     var next=cs.body;
                     if(next.addedToIsland){
-                    continue;
+                        continue;
                     }
                     // add rigid body to stack
                     this.islandStack[stackCount++]=next;
@@ -464,7 +481,7 @@ OIMO.World.prototype = {
                     constraint.addedToIsland=true;
                     next=js.body;
                     if(next.addedToIsland || !next.isDynamic){
-                    continue;
+                        continue;
                     }
                     // add rigid body to stack
                     this.islandStack[stackCount++]=next;
@@ -492,8 +509,8 @@ OIMO.World.prototype = {
             // randomizing order
             if(this.enableRandomizer){
                 //for(var j=1, l=islandNumConstraints; j<l; j++){
-                j = islandNumConstraints;
-                while(j--){ if(j!==0){     
+                    j = islandNumConstraints;
+                    while(j--){ if(j!==0){     
                         var swap=(this.randX=(this.randX*this.randA+this.randB&0x7fffffff))/2147483648.0*j|0;
                         constraint=this.islandConstraints[j];
                         this.islandConstraints[j]=this.islandConstraints[swap];
@@ -936,8 +953,8 @@ OIMO.RigidBody.prototype = {
     updatePosition:function(timeStep){
         switch(this.type){
             case this.BODY_STATIC:
-                this.linearVelocity.init();
-                this.angularVelocity.init();
+            this.linearVelocity.init();
+            this.angularVelocity.init();
                 // ONLY FOR TEST
                 if(this.controlPos){
                     this.position.copy(this.newPosition);
@@ -953,8 +970,8 @@ OIMO.RigidBody.prototype = {
                 this.angularVelocity.x=0;
                 this.angularVelocity.y=0;
                 this.angularVelocity.z=0;*/
-            break;
-            case this.BODY_DYNAMIC:
+                break;
+                case this.BODY_DYNAMIC:
 
                 if(this.controlPos){
                     this.angularVelocity.init();
@@ -988,76 +1005,76 @@ OIMO.RigidBody.prototype = {
                 this.position.addTime(this.linearVelocity, timeStep);
                 this.orientation.addTime(this.angularVelocity, timeStep);
 
-            break;
-            default:
+                break;
+                default:
                 throw new Error("Invalid type.");
-        }
-        this.syncShapes();
-    },
-    rotateInertia:function(rot,inertia,out){
-        var tm1 = rot.elements;
-        var tm2 = inertia.elements;
+            }
+            this.syncShapes();
+        },
+        rotateInertia:function(rot,inertia,out){
+            var tm1 = rot.elements;
+            var tm2 = inertia.elements;
 
-        var a0 = tm1[0], a3 = tm1[3], a6 = tm1[6];
-        var a1 = tm1[1], a4 = tm1[4], a7 = tm1[7];
-        var a2 = tm1[2], a5 = tm1[5], a8 = tm1[8];
+            var a0 = tm1[0], a3 = tm1[3], a6 = tm1[6];
+            var a1 = tm1[1], a4 = tm1[4], a7 = tm1[7];
+            var a2 = tm1[2], a5 = tm1[5], a8 = tm1[8];
 
-        var b0 = tm2[0], b3 = tm2[3], b6 = tm2[6];
-        var b1 = tm2[1], b4 = tm2[4], b7 = tm2[7];
-        var b2 = tm2[2], b5 = tm2[5], b8 = tm2[8];
-        
-        var e00 = a0*b0 + a1*b3 + a2*b6;
-        var e01 = a0*b1 + a1*b4 + a2*b7;
-        var e02 = a0*b2 + a1*b5 + a2*b8;
-        var e10 = a3*b0 + a4*b3 + a5*b6;
-        var e11 = a3*b1 + a4*b4 + a5*b7;
-        var e12 = a3*b2 + a4*b5 + a5*b8;
-        var e20 = a6*b0 + a7*b3 + a8*b6;
-        var e21 = a6*b1 + a7*b4 + a8*b7;
-        var e22 = a6*b2 + a7*b5 + a8*b8;
+            var b0 = tm2[0], b3 = tm2[3], b6 = tm2[6];
+            var b1 = tm2[1], b4 = tm2[4], b7 = tm2[7];
+            var b2 = tm2[2], b5 = tm2[5], b8 = tm2[8];
 
-        var oe = out.elements;
-        oe[0] = e00*a0 + e01*a1 + e02*a2;
-        oe[1] = e00*a3 + e01*a4 + e02*a5;
-        oe[2] = e00*a6 + e01*a7 + e02*a8;
-        oe[3] = e10*a0 + e11*a1 + e12*a2;
-        oe[4] = e10*a3 + e11*a4 + e12*a5;
-        oe[5] = e10*a6 + e11*a7 + e12*a8;
-        oe[6] = e20*a0 + e21*a1 + e22*a2;
-        oe[7] = e20*a3 + e21*a4 + e22*a5;
-        oe[8] = e20*a6 + e21*a7 + e22*a8;
-    },
-    syncShapes:function(){
-        var s=this.orientation.s;
-        var x=this.orientation.x;
-        var y=this.orientation.y;
-        var z=this.orientation.z;
-        var x2=2*x;
-        var y2=2*y;
-        var z2=2*z;
-        var xx=x*x2;
-        var yy=y*y2;
-        var zz=z*z2;
-        var xy=x*y2;
-        var yz=y*z2;
-        var xz=x*z2;
-        var sx=s*x2;
-        var sy=s*y2;
-        var sz=s*z2;
+            var e00 = a0*b0 + a1*b3 + a2*b6;
+            var e01 = a0*b1 + a1*b4 + a2*b7;
+            var e02 = a0*b2 + a1*b5 + a2*b8;
+            var e10 = a3*b0 + a4*b3 + a5*b6;
+            var e11 = a3*b1 + a4*b4 + a5*b7;
+            var e12 = a3*b2 + a4*b5 + a5*b8;
+            var e20 = a6*b0 + a7*b3 + a8*b6;
+            var e21 = a6*b1 + a7*b4 + a8*b7;
+            var e22 = a6*b2 + a7*b5 + a8*b8;
 
-        var tr = this.rotation.elements;
-        tr[0]=1-yy-zz;
-        tr[1]=xy-sz;
-        tr[2]=xz+sy;
-        tr[3]=xy+sz;
-        tr[4]=1-xx-zz;
-        tr[5]=yz-sx;
-        tr[6]=xz-sy;
-        tr[7]=yz+sx;
-        tr[8]=1-xx-yy;
+            var oe = out.elements;
+            oe[0] = e00*a0 + e01*a1 + e02*a2;
+            oe[1] = e00*a3 + e01*a4 + e02*a5;
+            oe[2] = e00*a6 + e01*a7 + e02*a8;
+            oe[3] = e10*a0 + e11*a1 + e12*a2;
+            oe[4] = e10*a3 + e11*a4 + e12*a5;
+            oe[5] = e10*a6 + e11*a7 + e12*a8;
+            oe[6] = e20*a0 + e21*a1 + e22*a2;
+            oe[7] = e20*a3 + e21*a4 + e22*a5;
+            oe[8] = e20*a6 + e21*a7 + e22*a8;
+        },
+        syncShapes:function(){
+            var s=this.orientation.s;
+            var x=this.orientation.x;
+            var y=this.orientation.y;
+            var z=this.orientation.z;
+            var x2=2*x;
+            var y2=2*y;
+            var z2=2*z;
+            var xx=x*x2;
+            var yy=y*y2;
+            var zz=z*z2;
+            var xy=x*y2;
+            var yz=y*z2;
+            var xz=x*z2;
+            var sx=s*x2;
+            var sy=s*y2;
+            var sz=s*z2;
 
-        this.rotateInertia(this.rotation,this.inverseLocalInertia,this.inverseInertia);
-        for(var shape=this.shapes;shape!=null;shape=shape.next){
+            var tr = this.rotation.elements;
+            tr[0]=1-yy-zz;
+            tr[1]=xy-sz;
+            tr[2]=xz+sy;
+            tr[3]=xy+sz;
+            tr[4]=1-xx-zz;
+            tr[5]=yz-sx;
+            tr[6]=xz-sy;
+            tr[7]=yz+sx;
+            tr[8]=1-xx-yy;
+
+            this.rotateInertia(this.rotation,this.inverseLocalInertia,this.inverseInertia);
+            for(var shape=this.shapes;shape!=null;shape=shape.next){
             //var relPos=shape.relativePosition;
             //var relRot=shape.relativeRotation;
             //var rot=shape.rotation;
@@ -1235,9 +1252,9 @@ OIMO.Body = function(Obj){
     var sc = obj.sc || new OIMO.ShapeConfig();
     if(obj.config){
         // The density of the shape.
-        sc.density = obj.config[0] || 1;
+        sc.density = obj.config[0] || 0.4;
         // The coefficient of friction of the shape.
-        sc.friction = obj.config[1] || 0.4;
+        sc.friction = obj.config[1] || 5;
         // The coefficient of restitution of the shape.
         sc.restitution = obj.config[2] || 0.2;
         // The bits of the collision groups to which the shape belongs.
@@ -1401,25 +1418,25 @@ OIMO.Link = function(Obj){
     
     switch(type){
         case "jointDistance": this.joint = new OIMO.DistanceJoint(jc, min, max); 
-            if(spring !== null) this.joint.limitMotor.setSpring(spring[0], spring[1]);
-            if(motor !== null) this.joint.limitMotor.setSpring(motor[0], motor[1]);
+        if(spring !== null) this.joint.limitMotor.setSpring(spring[0], spring[1]);
+        if(motor !== null) this.joint.limitMotor.setSpring(motor[0], motor[1]);
         break;
         case "jointHinge": this.joint = new OIMO.HingeJoint(jc, min, max);
             if(spring !== null) this.joint.limitMotor.setSpring(spring[0], spring[1]);// soften the joint ex: 100, 0.2
             if(motor !== null) this.joint.limitMotor.setSpring(motor[0], motor[1]);
-        break;
-        case "jointPrisme": this.joint = new OIMO.PrismaticJoint(jc, min, max); break;
-        case "jointSlide": this.joint = new OIMO.SliderJoint(jc, min, max); break;
-        case "jointBall": this.joint = new OIMO.BallAndSocketJoint(jc); break;
-        case "jointWheel": this.joint = new OIMO.WheelJoint(jc);  
+            break;
+            case "jointPrisme": this.joint = new OIMO.PrismaticJoint(jc, min, max); break;
+            case "jointSlide": this.joint = new OIMO.SliderJoint(jc, min, max); break;
+            case "jointBall": this.joint = new OIMO.BallAndSocketJoint(jc); break;
+            case "jointWheel": this.joint = new OIMO.WheelJoint(jc);  
             if(limit !== null) this.joint.rotationalLimitMotor1.setLimit(limit[0], limit[1]);
             if(spring !== null) this.joint.rotationalLimitMotor1.setSpring(spring[0], spring[1]);
             if(motor !== null) this.joint.rotationalLimitMotor1.setSpring(motor[0], motor[1]);
-        break;
-    }
+            break;
+        }
 
-    this.joint.name = this.name;
-    
+        this.joint.name = this.name;
+
     // finaly add to physics world
     this.parent.addJoint(this.joint);
 }
@@ -1458,40 +1475,40 @@ OIMO.Performance.prototype = {
 	upfps : function(){
 		this.f[1] = Date.now();
         if (this.f[1]-1000>this.f[0]){ this.f[0]=this.f[1]; this.fps=this.f[2]; this.f[2]=0; } this.f[2]++;
-	},
-	show : function(){
-		var info =[
-            "Oimo.js DEV.1.1.2a<br><br>",
-            "FPS: " + this.fps +" fps<br><br>",
-            "rigidbody "+this.parent.numRigidBodies+"<br>",
-            "contact &nbsp;&nbsp;"+this.parent.numContacts+"<br>",
-            "paircheck "+this.parent.broadPhase.numPairChecks+"<br>",
-            "contact &nbsp;&nbsp;"+this.parent.numContactPoints+"<br>",
-            "island &nbsp;&nbsp;&nbsp;"+this.parent.numIslands +"<br><br>",
-            "Time in ms <br>",
-            "broad-phase &nbsp;"+this.broadPhaseTime + "<br>",
-            "narrow-phase "+this.narrowPhaseTime + "<br>",
-            "solving &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+this.solvingTime + "<br>",
-            "updating &nbsp;&nbsp;&nbsp;&nbsp;"+this.updatingTime + "<br>",
-            "total &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+this.totalTime
-        ].join("\n");
-        return info;
-	},
-	toArray : function(){
-		this.infos[0] = this.parent.broadPhase.types;
-	    this.infos[1] = this.parent.numRigidBodies;
-	    this.infos[2] = this.parent.numContacts;
-	    this.infos[3] = this.parent.broadPhase.numPairChecks;
-	    this.infos[4] = this.parent.numContactPoints;
-	    this.infos[5] = this.parent.numIslands;
-	    this.infos[6] = this.broadPhaseTime;
-	    this.infos[7] = this.narrowPhaseTime;
-	    this.infos[8] = this.solvingTime;
-	    this.infos[9] = this.updatingTime;
-	    this.infos[10] = this.totalTime;
-	    this.infos[11] = this.fps;
-		return this.infos;
-	}
+    },
+    show : function(){
+      var info =[
+      "Oimo.js DEV.1.1.2a<br><br>",
+      "FPS: HI IRIS fps<br><br>",
+      "RED Score: "+ score.red+"<br>",
+      "YELLOW Score: "+score.yellow+"<br>",
+      "paircheck "+this.parent.broadPhase.numPairChecks+"<br>",
+      "contact &nbsp;&nbsp;"+this.parent.numContactPoints+"<br>",
+      "island &nbsp;&nbsp;&nbsp;"+this.parent.numIslands +"<br><br>",
+      "Time in ms <br>",
+      "broad-phase &nbsp;"+this.broadPhaseTime + "<br>",
+      "narrow-phase "+this.narrowPhaseTime + "<br>",
+      "solving &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+this.solvingTime + "<br>",
+      "updating &nbsp;&nbsp;&nbsp;&nbsp;"+this.updatingTime + "<br>",
+      "total &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+this.totalTime
+      ].join("\n");
+      return info;
+  },
+  toArray : function(){
+      this.infos[0] = this.parent.broadPhase.types;
+      this.infos[1] = this.parent.numRigidBodies;
+      this.infos[2] = this.parent.numContacts;
+      this.infos[3] = this.parent.broadPhase.numPairChecks;
+      this.infos[4] = this.parent.numContactPoints;
+      this.infos[5] = this.parent.numIslands;
+      this.infos[6] = this.broadPhaseTime;
+      this.infos[7] = this.narrowPhaseTime;
+      this.infos[8] = this.solvingTime;
+      this.infos[9] = this.updatingTime;
+      this.infos[10] = this.totalTime;
+      this.infos[11] = this.fps;
+      return this.infos;
+  }
 }
 OIMO.Mat44 = function(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44){
     this.elements = new OIMO_ARRAY_TYPE(16);
@@ -1555,7 +1572,7 @@ OIMO.Mat33 = function(e00,e01,e02,e10,e11,e12,e20,e21,e22){
         ( e00 !== undefined ) ? e00 : 1, e01 || 0, e02 || 0,
         e10 || 0, ( e11 !== undefined ) ? e11 : 1, e12 || 0,
         e20 || 0, e21 || 0, ( e22 !== undefined ) ? e22 : 1
-    );
+        );
 };
 
 OIMO.Mat33.prototype = {
@@ -1775,7 +1792,7 @@ OIMO.Mat33.prototype = {
             te[0], te[1], te[2],
             te[3], te[4], te[5],
             te[6], te[7], te[8]
-        );
+            );
     },
     toString: function(){
         var te = this.elements;
@@ -1867,15 +1884,15 @@ OIMO.Quat.prototype = {
         var z2=v2.z;
         var d=x1*x2+y1*y2+z1*z2;
         if(d==-1){
-        x2=y1*x1-z1*z1;
-        y2=-z1*y1-x1*x1;
-        z2=x1*z1+y1*y1;
-        d=1/Math.sqrt(x2*x2+y2*y2+z2*z2);
-        this.s=0;
-        this.x=x2*d;
-        this.y=y2*d;
-        this.z=z2*d;
-        return this;
+            x2=y1*x1-z1*z1;
+            y2=-z1*y1-x1*x1;
+            z2=x1*z1+y1*y1;
+            d=1/Math.sqrt(x2*x2+y2*y2+z2*z2);
+            this.s=0;
+            this.x=x2*d;
+            this.y=y2*d;
+            this.z=z2*d;
+            return this;
         }
         var cx=y1*z2-z1*y2;
         var cy=z1*x2-x1*z2;
@@ -1946,12 +1963,12 @@ OIMO.Quaternion.prototype = {
 
         var te = m.elements,
 
-            m11 = te[ 0 ], m12 = te[ 1 ], m13 = te[ 2 ],
-            m21 = te[ 3 ], m22 = te[ 4 ], m23 = te[ 5 ],
-            m31 = te[ 6 ], m32 = te[ 7 ], m33 = te[ 8 ],
+        m11 = te[ 0 ], m12 = te[ 1 ], m13 = te[ 2 ],
+        m21 = te[ 3 ], m22 = te[ 4 ], m23 = te[ 5 ],
+        m31 = te[ 6 ], m32 = te[ 7 ], m33 = te[ 8 ],
 
-            trace = m11 + m22 + m33,
-            s;
+        trace = m11 + m22 + m33,
+        s;
 
         if ( trace > 0 ) {
 
@@ -2281,124 +2298,124 @@ OIMO.Euler.prototype = {
 		var m31 = te[ 2 ], m32 = te[ 6 ], m33 = te[ 10 ];*/
 
 		var m11 = te[ 0 ], m12 = te[ 1 ], m13 = te[ 2 ],
-            m21 = te[ 3 ], m22 = te[ 4 ], m23 = te[ 5 ],
-            m31 = te[ 6 ], m32 = te[ 7 ], m33 = te[ 8 ];
+        m21 = te[ 3 ], m22 = te[ 4 ], m23 = te[ 5 ],
+        m31 = te[ 6 ], m32 = te[ 7 ], m33 = te[ 8 ];
 
-		order = order || this._order;
+        order = order || this._order;
 
-		if ( order === 'XYZ' ) {
+        if ( order === 'XYZ' ) {
 
-			this._y = Math.asin( clamp( m13, - 1, 1 ) );
+         this._y = Math.asin( clamp( m13, - 1, 1 ) );
 
-			if ( Math.abs( m13 ) < 0.99999 ) {
+         if ( Math.abs( m13 ) < 0.99999 ) {
 
-				this._x = Math.atan2( - m23, m33 );
-				this._z = Math.atan2( - m12, m11 );
+            this._x = Math.atan2( - m23, m33 );
+            this._z = Math.atan2( - m12, m11 );
 
-			} else {
+        } else {
 
-				this._x = Math.atan2( m32, m22 );
-				this._z = 0;
+            this._x = Math.atan2( m32, m22 );
+            this._z = 0;
 
-			}
+        }
 
-		} else if ( order === 'YXZ' ) {
+    } else if ( order === 'YXZ' ) {
 
-			this._x = Math.asin( - clamp( m23, - 1, 1 ) );
+     this._x = Math.asin( - clamp( m23, - 1, 1 ) );
 
-			if ( Math.abs( m23 ) < 0.99999 ) {
+     if ( Math.abs( m23 ) < 0.99999 ) {
 
-				this._y = Math.atan2( m13, m33 );
-				this._z = Math.atan2( m21, m22 );
+        this._y = Math.atan2( m13, m33 );
+        this._z = Math.atan2( m21, m22 );
 
-			} else {
+    } else {
 
-				this._y = Math.atan2( - m31, m11 );
-				this._z = 0;
+        this._y = Math.atan2( - m31, m11 );
+        this._z = 0;
 
-			}
+    }
 
-		} else if ( order === 'ZXY' ) {
+} else if ( order === 'ZXY' ) {
 
-			this._x = Math.asin( clamp( m32, - 1, 1 ) );
+ this._x = Math.asin( clamp( m32, - 1, 1 ) );
 
-			if ( Math.abs( m32 ) < 0.99999 ) {
+ if ( Math.abs( m32 ) < 0.99999 ) {
 
-				this._y = Math.atan2( - m31, m33 );
-				this._z = Math.atan2( - m12, m22 );
+    this._y = Math.atan2( - m31, m33 );
+    this._z = Math.atan2( - m12, m22 );
 
-			} else {
+} else {
 
-				this._y = 0;
-				this._z = Math.atan2( m21, m11 );
+    this._y = 0;
+    this._z = Math.atan2( m21, m11 );
 
-			}
+}
 
-		} else if ( order === 'ZYX' ) {
+} else if ( order === 'ZYX' ) {
 
-			this._y = Math.asin( - clamp( m31, - 1, 1 ) );
+ this._y = Math.asin( - clamp( m31, - 1, 1 ) );
 
-			if ( Math.abs( m31 ) < 0.99999 ) {
+ if ( Math.abs( m31 ) < 0.99999 ) {
 
-				this._x = Math.atan2( m32, m33 );
-				this._z = Math.atan2( m21, m11 );
+    this._x = Math.atan2( m32, m33 );
+    this._z = Math.atan2( m21, m11 );
 
-			} else {
+} else {
 
-				this._x = 0;
-				this._z = Math.atan2( - m12, m22 );
+    this._x = 0;
+    this._z = Math.atan2( - m12, m22 );
 
-			}
+}
 
-		} else if ( order === 'YZX' ) {
+} else if ( order === 'YZX' ) {
 
-			this._z = Math.asin( clamp( m21, - 1, 1 ) );
+ this._z = Math.asin( clamp( m21, - 1, 1 ) );
 
-			if ( Math.abs( m21 ) < 0.99999 ) {
+ if ( Math.abs( m21 ) < 0.99999 ) {
 
-				this._x = Math.atan2( - m23, m22 );
-				this._y = Math.atan2( - m31, m11 );
+    this._x = Math.atan2( - m23, m22 );
+    this._y = Math.atan2( - m31, m11 );
 
-			} else {
+} else {
 
-				this._x = 0;
-				this._y = Math.atan2( m13, m33 );
+    this._x = 0;
+    this._y = Math.atan2( m13, m33 );
 
-			}
+}
 
-		} else if ( order === 'XZY' ) {
+} else if ( order === 'XZY' ) {
 
-			this._z = Math.asin( - clamp( m12, - 1, 1 ) );
+ this._z = Math.asin( - clamp( m12, - 1, 1 ) );
 
-			if ( Math.abs( m12 ) < 0.99999 ) {
+ if ( Math.abs( m12 ) < 0.99999 ) {
 
-				this._x = Math.atan2( m32, m22 );
-				this._y = Math.atan2( m13, m11 );
+    this._x = Math.atan2( m32, m22 );
+    this._y = Math.atan2( m13, m11 );
 
-			} else {
+} else {
 
-				this._x = Math.atan2( - m23, m33 );
-				this._y = 0;
+    this._x = Math.atan2( - m23, m33 );
+    this._y = 0;
 
-			}
+}
 
-		} else {
+} else {
 
-			console.warn( 'THREE.Euler: .setFromRotationMatrix() given unsupported order: ' + order )
+ console.warn( 'THREE.Euler: .setFromRotationMatrix() given unsupported order: ' + order )
 
-		}
+}
 
-		this._order = order;
+this._order = order;
 
-		this.onChangeCallback();
+this.onChangeCallback();
 
-		return this;
+return this;
 
-	},
+},
 
-	setFromQuaternion: function ( q, order, update ) {
+setFromQuaternion: function ( q, order, update ) {
 
-		var clamp = OIMO.clamp;
+  var clamp = OIMO.clamp;
 
 		// q is assumed to be normalized
 
@@ -3058,16 +3075,16 @@ OIMO.HingeJoint.prototype.preSolve = function (timeStep,invTimeStep) {
     // ----------------------------------------------
     //            calculate hinge angle
     // ----------------------------------------------
-            
+
     if(
         nx*(angAxis1Y*angAxis2Z-angAxis1Z*angAxis2Y)+
         ny*(angAxis1Z*angAxis2X-angAxis1X*angAxis2Z)+
         nz*(angAxis1X*angAxis2Y-angAxis1Y*angAxis2X)<0
-    ){
+        ){
         this.limitMotor.angle=-this.acosClamp(angAxis1X*angAxis2X+angAxis1Y*angAxis2Y+angAxis1Z*angAxis2Z);
-    }else{
-        this.limitMotor.angle=this.acosClamp(angAxis1X*angAxis2X+angAxis1Y*angAxis2Y+angAxis1Z*angAxis2Z);
-    }
+}else{
+    this.limitMotor.angle=this.acosClamp(angAxis1X*angAxis2X+angAxis1Y*angAxis2Y+angAxis1Z*angAxis2Z);
+}
 
     // angular error
     tmp1X=axis1Y*axis2Z-axis1Z*axis2Y;
@@ -3268,16 +3285,16 @@ OIMO.SliderJoint.prototype.preSolve = function (timeStep,invTimeStep) {
     //            calculate hinge angle
     // ----------------------------------------------
 
-            
+
     if(
         nx*(angAxis1Y*angAxis2Z-angAxis1Z*angAxis2Y)+
         ny*(angAxis1Z*angAxis2X-angAxis1X*angAxis2Z)+
         nz*(angAxis1X*angAxis2Y-angAxis1Y*angAxis2X)<0
         ){
         this.rotationalLimitMotor.angle=-this.acosClamp(angAxis1X*angAxis2X+angAxis1Y*angAxis2Y+angAxis1Z*angAxis2Z);
-    }else{
-        this.rotationalLimitMotor.angle=this.acosClamp(angAxis1X*angAxis2X+angAxis1Y*angAxis2Y+angAxis1Z*angAxis2Z);
-    }
+}else{
+    this.rotationalLimitMotor.angle=this.acosClamp(angAxis1X*angAxis2X+angAxis1Y*angAxis2Y+angAxis1Z*angAxis2Z);
+}
 
     // angular error
     tmp1X=axis1Y*axis2Z-axis1Z*axis2Y;
@@ -3539,10 +3556,10 @@ OIMO.AngularConstraint.prototype = {
         var v21=this.i1e21+this.i2e21;
         var v22=this.i1e22+this.i2e22;
         var inv=1/(
-        v00*(v11*v22-v21*v12)+
-        v10*(v21*v02-v01*v22)+
-        v20*(v01*v12-v11*v02)
-        );
+            v00*(v11*v22-v21*v12)+
+            v10*(v21*v02-v01*v22)+
+            v20*(v01*v12-v11*v02)
+            );
         this.d00=(v11*v22-v12*v21)*inv;
         this.d01=(v02*v21-v01*v22)*inv;
         this.d02=(v01*v12-v02*v11)*inv;
@@ -3780,10 +3797,10 @@ OIMO.LinearConstraint.prototype = {
         k22+=this.i2e00*this.r2y*this.r2y-(this.i2e10+this.i2e01)*this.r2x*this.r2y+this.i2e11*this.r2x*this.r2x;
 
         var inv=1/(
-        k00*(k11*k22-k21*k12)+
-        k10*(k21*k02-k01*k22)+
-        k20*(k01*k12-k11*k02)
-        );
+            k00*(k11*k22-k21*k12)+
+            k10*(k21*k02-k01*k22)+
+            k20*(k01*k12-k11*k02)
+            );
         this.d00=(k11*k22-k12*k21)*inv;
         this.d01=(k02*k21-k01*k22)*inv;
         this.d02=(k01*k12-k02*k11)*inv;
@@ -4128,7 +4145,7 @@ OIMO.Rotational3Constraint.prototype = {
                 this.limitState3=2;
                 this.limitImpulse3=0;
                 this.limitVelocity3=0;
-                }
+            }
             if(!enableSpring3){
                 if(this.limitVelocity3>0.02)this.limitVelocity3-=0.02;
                 else if(this.limitVelocity3<-0.02)this.limitVelocity3+=0.02;
@@ -4236,10 +4253,10 @@ OIMO.Rotational3Constraint.prototype = {
         this.k22+=this.cfm3;
 
         var inv=1/(
-        this.k00*(this.k11*this.k22-this.k21*this.k12)+
-        this.k10*(this.k21*this.k02-this.k01*this.k22)+
-        this.k20*(this.k01*this.k12-this.k11*this.k02)
-        );
+            this.k00*(this.k11*this.k22-this.k21*this.k12)+
+            this.k10*(this.k21*this.k02-this.k01*this.k22)+
+            this.k20*(this.k01*this.k12-this.k11*this.k02)
+            );
         this.d00=(this.k11*this.k22-this.k12*this.k21)*inv;
         this.d01=(this.k02*this.k21-this.k01*this.k22)*inv;
         this.d02=(this.k01*this.k12-this.k02*this.k11)*inv;
@@ -4312,9 +4329,9 @@ OIMO.Rotational3Constraint.prototype = {
             dMotorImpulse1=(rvn1-this.motorSpeed1)*this.dv00;
             this.motorImpulse1+=dMotorImpulse1;
             if(this.motorImpulse1>this.maxMotorImpulse1){ // clamp motor impulse
-            this.motorImpulse1=this.maxMotorImpulse1;
+                this.motorImpulse1=this.maxMotorImpulse1;
             }else if(this.motorImpulse1<-this.maxMotorImpulse1){
-            this.motorImpulse1=-this.maxMotorImpulse1;
+                this.motorImpulse1=-this.maxMotorImpulse1;
             }
             dMotorImpulse1=this.motorImpulse1-oldMotorImpulse1;
         }
@@ -4966,7 +4983,7 @@ OIMO.Translational3Constraint.prototype = {
                 }
                 this.limitVelocity3=this.lowerLimit3-d3;
                 if(!enableSpring3)d3=this.lowerLimit3;
-                }else if(d3<this.lowerLimit3){
+            }else if(d3<this.lowerLimit3){
                 if(this.limitState3!=-1){
                     this.limitState3=-1;
                     this.limitImpulse3=0;
@@ -5162,10 +5179,10 @@ OIMO.Translational3Constraint.prototype = {
         this.k22+=this.cfm3;
 
         var inv=1/(
-        this.k00*(this.k11*this.k22-this.k21*this.k12)+
-        this.k10*(this.k21*this.k02-this.k01*this.k22)+
-        this.k20*(this.k01*this.k12-this.k11*this.k02)
-        );
+            this.k00*(this.k11*this.k22-this.k21*this.k12)+
+            this.k10*(this.k21*this.k02-this.k01*this.k22)+
+            this.k20*(this.k01*this.k12-this.k11*this.k02)
+            );
         this.d00=(this.k11*this.k22-this.k12*this.k21)*inv;
         this.d01=(this.k02*this.k21-this.k01*this.k22)*inv;
         this.d02=(this.k01*this.k12-this.k02*this.k11)*inv;
@@ -5539,9 +5556,9 @@ OIMO.TranslationalConstraint.prototype = {
         this.a2z=this.t2x*this.i2e20+this.t2y*this.i2e21+this.t2z*this.i2e22;
         this.motorDenom=
         this.m1+this.m2+
-            this.ax*(this.a1y*this.r1z-this.a1z*this.r1y+this.a2y*this.r2z-this.a2z*this.r2y)+
-            this.ay*(this.a1z*this.r1x-this.a1x*this.r1z+this.a2z*this.r2x-this.a2x*this.r2z)+
-            this.az*(this.a1x*this.r1y-this.a1y*this.r1x+this.a2x*this.r2y-this.a2y*this.r2x);
+        this.ax*(this.a1y*this.r1z-this.a1z*this.r1y+this.a2y*this.r2z-this.a2z*this.r2y)+
+        this.ay*(this.a1z*this.r1x-this.a1x*this.r1z+this.a2z*this.r2x-this.a2x*this.r2z)+
+        this.az*(this.a1x*this.r1y-this.a1y*this.r1x+this.a2x*this.r2y-this.a2y*this.r2x);
 
         this.invMotorDenom=1/this.motorDenom;
 
@@ -5574,8 +5591,8 @@ OIMO.TranslationalConstraint.prototype = {
     },
     solve:function(){
         var rvn=
-            this.ax*(this.l2.x-this.l1.x)+this.ay*(this.l2.y-this.l1.y)+this.az*(this.l2.z-this.l1.z)+
-            this.t2x*this.a2.x-this.t1x*this.a1.x+this.t2y*this.a2.y-this.t1y*this.a1.y+this.t2z*this.a2.z-this.t1z*this.a1.z;
+        this.ax*(this.l2.x-this.l1.x)+this.ay*(this.l2.y-this.l1.y)+this.az*(this.l2.z-this.l1.z)+
+        this.t2x*this.a2.x-this.t1x*this.a1.x+this.t2y*this.a2.y-this.t1y*this.a1.y+this.t2z*this.a2.z-this.t1z*this.a1.z;
 
         // motor part
         var newMotorImpulse;
@@ -5967,230 +5984,230 @@ OIMO.ContactConstraint.prototype.preSolve = function(timeStep,invTimeStep){
     this.num=this.manifold.numPoints;
     var c=this.cs;
     for(var i=0;i<this.num;i++){
-    var p=this.ps[i];
-    var tmp1X;
-    var tmp1Y;
-    var tmp1Z;
-    var tmp2X;
-    var tmp2Y;
-    var tmp2Z;
-    tmp1X=p.position.x;
-    tmp1Y=p.position.y;
-    tmp1Z=p.position.z;
-    var rp1X=tmp1X-p1x;
-    var rp1Y=tmp1Y-p1y;
-    var rp1Z=tmp1Z-p1z;
-    var rp2X=tmp1X-p2x;
-    var rp2Y=tmp1Y-p2y;
-    var rp2Z=tmp1Z-p2z;
-    c.rp1X=rp1X;
-    c.rp1Y=rp1Y;
-    c.rp1Z=rp1Z;
-    c.rp2X=rp2X;
-    c.rp2Y=rp2Y;
-    c.rp2Z=rp2Z;
-    c.norImp=p.normalImpulse;
-    c.tanImp=p.tangentImpulse;
-    c.binImp=p.binormalImpulse;
-    var norX=p.normal.x;
-    var norY=p.normal.y;
-    var norZ=p.normal.z;
-    var rvX=(this.lv2.x+this.av2.y*rp2Z-this.av2.z*rp2Y)-(this.lv1.x+this.av1.y*rp1Z-this.av1.z*rp1Y);
-    var rvY=(this.lv2.y+this.av2.z*rp2X-this.av2.x*rp2Z)-(this.lv1.y+this.av1.z*rp1X-this.av1.x*rp1Z);
-    var rvZ=(this.lv2.z+this.av2.x*rp2Y-this.av2.y*rp2X)-(this.lv1.z+this.av1.x*rp1Y-this.av1.y*rp1X);
-    var rvn=norX*rvX+norY*rvY+norZ*rvZ;
-    var tanX=rvX-rvn*norX;
-    var tanY=rvY-rvn*norY;
-    var tanZ=rvZ-rvn*norZ;
-    var len=tanX*tanX+tanY*tanY+tanZ*tanZ;
-    if(len>0.04){
-    len=1/Math.sqrt(len);
-    }else{
-    tanX=norY*norX-norZ*norZ;
-    tanY=-norZ*norY-norX*norX;
-    tanZ=norX*norZ+norY*norY;
-    len=1/Math.sqrt(tanX*tanX+tanY*tanY+tanZ*tanZ);
-    }
-    tanX*=len;
-    tanY*=len;
-    tanZ*=len;
-    var binX=norY*tanZ-norZ*tanY;
-    var binY=norZ*tanX-norX*tanZ;
-    var binZ=norX*tanY-norY*tanX;
-    c.norX=norX;
-    c.norY=norY;
-    c.norZ=norZ;
-    c.tanX=tanX;
-    c.tanY=tanY;
-    c.tanZ=tanZ;
-    c.binX=binX;
-    c.binY=binY;
-    c.binZ=binZ;
-    c.norU1X=norX*this.m1;
-    c.norU1Y=norY*this.m1;
-    c.norU1Z=norZ*this.m1;
-    c.norU2X=norX*this.m2;
-    c.norU2Y=norY*this.m2;
-    c.norU2Z=norZ*this.m2;
-    c.tanU1X=tanX*this.m1;
-    c.tanU1Y=tanY*this.m1;
-    c.tanU1Z=tanZ*this.m1;
-    c.tanU2X=tanX*this.m2;
-    c.tanU2Y=tanY*this.m2;
-    c.tanU2Z=tanZ*this.m2;
-    c.binU1X=binX*this.m1;
-    c.binU1Y=binY*this.m1;
-    c.binU1Z=binZ*this.m1;
-    c.binU2X=binX*this.m2;
-    c.binU2Y=binY*this.m2;
-    c.binU2Z=binZ*this.m2;
-    var norT1X=rp1Y*norZ-rp1Z*norY;
-    var norT1Y=rp1Z*norX-rp1X*norZ;
-    var norT1Z=rp1X*norY-rp1Y*norX;
-    var norT2X=rp2Y*norZ-rp2Z*norY;
-    var norT2Y=rp2Z*norX-rp2X*norZ;
-    var norT2Z=rp2X*norY-rp2Y*norX;
-    var tanT1X=rp1Y*tanZ-rp1Z*tanY;
-    var tanT1Y=rp1Z*tanX-rp1X*tanZ;
-    var tanT1Z=rp1X*tanY-rp1Y*tanX;
-    var tanT2X=rp2Y*tanZ-rp2Z*tanY;
-    var tanT2Y=rp2Z*tanX-rp2X*tanZ;
-    var tanT2Z=rp2X*tanY-rp2Y*tanX;
-    var binT1X=rp1Y*binZ-rp1Z*binY;
-    var binT1Y=rp1Z*binX-rp1X*binZ;
-    var binT1Z=rp1X*binY-rp1Y*binX;
-    var binT2X=rp2Y*binZ-rp2Z*binY;
-    var binT2Y=rp2Z*binX-rp2X*binZ;
-    var binT2Z=rp2X*binY-rp2Y*binX;
-    var norTU1X=norT1X*this.i1e00+norT1Y*this.i1e01+norT1Z*this.i1e02;
-    var norTU1Y=norT1X*this.i1e10+norT1Y*this.i1e11+norT1Z*this.i1e12;
-    var norTU1Z=norT1X*this.i1e20+norT1Y*this.i1e21+norT1Z*this.i1e22;
-    var norTU2X=norT2X*this.i2e00+norT2Y*this.i2e01+norT2Z*this.i2e02;
-    var norTU2Y=norT2X*this.i2e10+norT2Y*this.i2e11+norT2Z*this.i2e12;
-    var norTU2Z=norT2X*this.i2e20+norT2Y*this.i2e21+norT2Z*this.i2e22;
-    var tanTU1X=tanT1X*this.i1e00+tanT1Y*this.i1e01+tanT1Z*this.i1e02;
-    var tanTU1Y=tanT1X*this.i1e10+tanT1Y*this.i1e11+tanT1Z*this.i1e12;
-    var tanTU1Z=tanT1X*this.i1e20+tanT1Y*this.i1e21+tanT1Z*this.i1e22;
-    var tanTU2X=tanT2X*this.i2e00+tanT2Y*this.i2e01+tanT2Z*this.i2e02;
-    var tanTU2Y=tanT2X*this.i2e10+tanT2Y*this.i2e11+tanT2Z*this.i2e12;
-    var tanTU2Z=tanT2X*this.i2e20+tanT2Y*this.i2e21+tanT2Z*this.i2e22;
-    var binTU1X=binT1X*this.i1e00+binT1Y*this.i1e01+binT1Z*this.i1e02;
-    var binTU1Y=binT1X*this.i1e10+binT1Y*this.i1e11+binT1Z*this.i1e12;
-    var binTU1Z=binT1X*this.i1e20+binT1Y*this.i1e21+binT1Z*this.i1e22;
-    var binTU2X=binT2X*this.i2e00+binT2Y*this.i2e01+binT2Z*this.i2e02;
-    var binTU2Y=binT2X*this.i2e10+binT2Y*this.i2e11+binT2Z*this.i2e12;
-    var binTU2Z=binT2X*this.i2e20+binT2Y*this.i2e21+binT2Z*this.i2e22;
-    c.norT1X=norT1X;
-    c.norT1Y=norT1Y;
-    c.norT1Z=norT1Z;
-    c.tanT1X=tanT1X;
-    c.tanT1Y=tanT1Y;
-    c.tanT1Z=tanT1Z;
-    c.binT1X=binT1X;
-    c.binT1Y=binT1Y;
-    c.binT1Z=binT1Z;
-    c.norT2X=norT2X;
-    c.norT2Y=norT2Y;
-    c.norT2Z=norT2Z;
-    c.tanT2X=tanT2X;
-    c.tanT2Y=tanT2Y;
-    c.tanT2Z=tanT2Z;
-    c.binT2X=binT2X;
-    c.binT2Y=binT2Y;
-    c.binT2Z=binT2Z;
-    c.norTU1X=norTU1X;
-    c.norTU1Y=norTU1Y;
-    c.norTU1Z=norTU1Z;
-    c.tanTU1X=tanTU1X;
-    c.tanTU1Y=tanTU1Y;
-    c.tanTU1Z=tanTU1Z;
-    c.binTU1X=binTU1X;
-    c.binTU1Y=binTU1Y;
-    c.binTU1Z=binTU1Z;
-    c.norTU2X=norTU2X;
-    c.norTU2Y=norTU2Y;
-    c.norTU2Z=norTU2Z;
-    c.tanTU2X=tanTU2X;
-    c.tanTU2Y=tanTU2Y;
-    c.tanTU2Z=tanTU2Z;
-    c.binTU2X=binTU2X;
-    c.binTU2Y=binTU2Y;
-    c.binTU2Z=binTU2Z;
-    tmp1X=norT1X*this.i1e00+norT1Y*this.i1e01+norT1Z*this.i1e02;
-    tmp1Y=norT1X*this.i1e10+norT1Y*this.i1e11+norT1Z*this.i1e12;
-    tmp1Z=norT1X*this.i1e20+norT1Y*this.i1e21+norT1Z*this.i1e22;
-    tmp2X=tmp1Y*rp1Z-tmp1Z*rp1Y;
-    tmp2Y=tmp1Z*rp1X-tmp1X*rp1Z;
-    tmp2Z=tmp1X*rp1Y-tmp1Y*rp1X;
-    tmp1X=norT2X*this.i2e00+norT2Y*this.i2e01+norT2Z*this.i2e02;
-    tmp1Y=norT2X*this.i2e10+norT2Y*this.i2e11+norT2Z*this.i2e12;
-    tmp1Z=norT2X*this.i2e20+norT2Y*this.i2e21+norT2Z*this.i2e22;
-    tmp2X+=tmp1Y*rp2Z-tmp1Z*rp2Y;
-    tmp2Y+=tmp1Z*rp2X-tmp1X*rp2Z;
-    tmp2Z+=tmp1X*rp2Y-tmp1Y*rp2X;
-    var norDen=1/(m1m2+norX*tmp2X+norY*tmp2Y+norZ*tmp2Z);
-    tmp1X=tanT1X*this.i1e00+tanT1Y*this.i1e01+tanT1Z*this.i1e02;
-    tmp1Y=tanT1X*this.i1e10+tanT1Y*this.i1e11+tanT1Z*this.i1e12;
-    tmp1Z=tanT1X*this.i1e20+tanT1Y*this.i1e21+tanT1Z*this.i1e22;
-    tmp2X=tmp1Y*rp1Z-tmp1Z*rp1Y;
-    tmp2Y=tmp1Z*rp1X-tmp1X*rp1Z;
-    tmp2Z=tmp1X*rp1Y-tmp1Y*rp1X;
-    tmp1X=tanT2X*this.i2e00+tanT2Y*this.i2e01+tanT2Z*this.i2e02;
-    tmp1Y=tanT2X*this.i2e10+tanT2Y*this.i2e11+tanT2Z*this.i2e12;
-    tmp1Z=tanT2X*this.i2e20+tanT2Y*this.i2e21+tanT2Z*this.i2e22;
-    tmp2X+=tmp1Y*rp2Z-tmp1Z*rp2Y;
-    tmp2Y+=tmp1Z*rp2X-tmp1X*rp2Z;
-    tmp2Z+=tmp1X*rp2Y-tmp1Y*rp2X;
-    var tanDen=1/(m1m2+tanX*tmp2X+tanY*tmp2Y+tanZ*tmp2Z);
-    tmp1X=binT1X*this.i1e00+binT1Y*this.i1e01+binT1Z*this.i1e02;
-    tmp1Y=binT1X*this.i1e10+binT1Y*this.i1e11+binT1Z*this.i1e12;
-    tmp1Z=binT1X*this.i1e20+binT1Y*this.i1e21+binT1Z*this.i1e22;
-    tmp2X=tmp1Y*rp1Z-tmp1Z*rp1Y;
-    tmp2Y=tmp1Z*rp1X-tmp1X*rp1Z;
-    tmp2Z=tmp1X*rp1Y-tmp1Y*rp1X;
-    tmp1X=binT2X*this.i2e00+binT2Y*this.i2e01+binT2Z*this.i2e02;
-    tmp1Y=binT2X*this.i2e10+binT2Y*this.i2e11+binT2Z*this.i2e12;
-    tmp1Z=binT2X*this.i2e20+binT2Y*this.i2e21+binT2Z*this.i2e22;
-    tmp2X+=tmp1Y*rp2Z-tmp1Z*rp2Y;
-    tmp2Y+=tmp1Z*rp2X-tmp1X*rp2Z;
-    tmp2Z+=tmp1X*rp2Y-tmp1Y*rp2X;
-    var binDen=1/(m1m2+binX*tmp2X+binY*tmp2Y+binZ*tmp2Z);
-    c.norDen=norDen;
-    c.tanDen=tanDen;
-    c.binDen=binDen;
-    if(p.warmStarted){
-    var norImp=p.normalImpulse;
-    this.lv1.x+=c.norU1X*norImp;
-    this.lv1.y+=c.norU1Y*norImp;
-    this.lv1.z+=c.norU1Z*norImp;
-    this.av1.x+=norTU1X*norImp;
-    this.av1.y+=norTU1Y*norImp;
-    this.av1.z+=norTU1Z*norImp;
-    this.lv2.x-=c.norU2X*norImp;
-    this.lv2.y-=c.norU2Y*norImp;
-    this.lv2.z-=c.norU2Z*norImp;
-    this.av2.x-=norTU2X*norImp;
-    this.av2.y-=norTU2Y*norImp;
-    this.av2.z-=norTU2Z*norImp;
-    c.norImp=norImp;
-    c.tanImp=0;
-    c.binImp=0;
+        var p=this.ps[i];
+        var tmp1X;
+        var tmp1Y;
+        var tmp1Z;
+        var tmp2X;
+        var tmp2Y;
+        var tmp2Z;
+        tmp1X=p.position.x;
+        tmp1Y=p.position.y;
+        tmp1Z=p.position.z;
+        var rp1X=tmp1X-p1x;
+        var rp1Y=tmp1Y-p1y;
+        var rp1Z=tmp1Z-p1z;
+        var rp2X=tmp1X-p2x;
+        var rp2Y=tmp1Y-p2y;
+        var rp2Z=tmp1Z-p2z;
+        c.rp1X=rp1X;
+        c.rp1Y=rp1Y;
+        c.rp1Z=rp1Z;
+        c.rp2X=rp2X;
+        c.rp2Y=rp2Y;
+        c.rp2Z=rp2Z;
+        c.norImp=p.normalImpulse;
+        c.tanImp=p.tangentImpulse;
+        c.binImp=p.binormalImpulse;
+        var norX=p.normal.x;
+        var norY=p.normal.y;
+        var norZ=p.normal.z;
+        var rvX=(this.lv2.x+this.av2.y*rp2Z-this.av2.z*rp2Y)-(this.lv1.x+this.av1.y*rp1Z-this.av1.z*rp1Y);
+        var rvY=(this.lv2.y+this.av2.z*rp2X-this.av2.x*rp2Z)-(this.lv1.y+this.av1.z*rp1X-this.av1.x*rp1Z);
+        var rvZ=(this.lv2.z+this.av2.x*rp2Y-this.av2.y*rp2X)-(this.lv1.z+this.av1.x*rp1Y-this.av1.y*rp1X);
+        var rvn=norX*rvX+norY*rvY+norZ*rvZ;
+        var tanX=rvX-rvn*norX;
+        var tanY=rvY-rvn*norY;
+        var tanZ=rvZ-rvn*norZ;
+        var len=tanX*tanX+tanY*tanY+tanZ*tanZ;
+        if(len>0.04){
+            len=1/Math.sqrt(len);
+        }else{
+            tanX=norY*norX-norZ*norZ;
+            tanY=-norZ*norY-norX*norX;
+            tanZ=norX*norZ+norY*norY;
+            len=1/Math.sqrt(tanX*tanX+tanY*tanY+tanZ*tanZ);
+        }
+        tanX*=len;
+        tanY*=len;
+        tanZ*=len;
+        var binX=norY*tanZ-norZ*tanY;
+        var binY=norZ*tanX-norX*tanZ;
+        var binZ=norX*tanY-norY*tanX;
+        c.norX=norX;
+        c.norY=norY;
+        c.norZ=norZ;
+        c.tanX=tanX;
+        c.tanY=tanY;
+        c.tanZ=tanZ;
+        c.binX=binX;
+        c.binY=binY;
+        c.binZ=binZ;
+        c.norU1X=norX*this.m1;
+        c.norU1Y=norY*this.m1;
+        c.norU1Z=norZ*this.m1;
+        c.norU2X=norX*this.m2;
+        c.norU2Y=norY*this.m2;
+        c.norU2Z=norZ*this.m2;
+        c.tanU1X=tanX*this.m1;
+        c.tanU1Y=tanY*this.m1;
+        c.tanU1Z=tanZ*this.m1;
+        c.tanU2X=tanX*this.m2;
+        c.tanU2Y=tanY*this.m2;
+        c.tanU2Z=tanZ*this.m2;
+        c.binU1X=binX*this.m1;
+        c.binU1Y=binY*this.m1;
+        c.binU1Z=binZ*this.m1;
+        c.binU2X=binX*this.m2;
+        c.binU2Y=binY*this.m2;
+        c.binU2Z=binZ*this.m2;
+        var norT1X=rp1Y*norZ-rp1Z*norY;
+        var norT1Y=rp1Z*norX-rp1X*norZ;
+        var norT1Z=rp1X*norY-rp1Y*norX;
+        var norT2X=rp2Y*norZ-rp2Z*norY;
+        var norT2Y=rp2Z*norX-rp2X*norZ;
+        var norT2Z=rp2X*norY-rp2Y*norX;
+        var tanT1X=rp1Y*tanZ-rp1Z*tanY;
+        var tanT1Y=rp1Z*tanX-rp1X*tanZ;
+        var tanT1Z=rp1X*tanY-rp1Y*tanX;
+        var tanT2X=rp2Y*tanZ-rp2Z*tanY;
+        var tanT2Y=rp2Z*tanX-rp2X*tanZ;
+        var tanT2Z=rp2X*tanY-rp2Y*tanX;
+        var binT1X=rp1Y*binZ-rp1Z*binY;
+        var binT1Y=rp1Z*binX-rp1X*binZ;
+        var binT1Z=rp1X*binY-rp1Y*binX;
+        var binT2X=rp2Y*binZ-rp2Z*binY;
+        var binT2Y=rp2Z*binX-rp2X*binZ;
+        var binT2Z=rp2X*binY-rp2Y*binX;
+        var norTU1X=norT1X*this.i1e00+norT1Y*this.i1e01+norT1Z*this.i1e02;
+        var norTU1Y=norT1X*this.i1e10+norT1Y*this.i1e11+norT1Z*this.i1e12;
+        var norTU1Z=norT1X*this.i1e20+norT1Y*this.i1e21+norT1Z*this.i1e22;
+        var norTU2X=norT2X*this.i2e00+norT2Y*this.i2e01+norT2Z*this.i2e02;
+        var norTU2Y=norT2X*this.i2e10+norT2Y*this.i2e11+norT2Z*this.i2e12;
+        var norTU2Z=norT2X*this.i2e20+norT2Y*this.i2e21+norT2Z*this.i2e22;
+        var tanTU1X=tanT1X*this.i1e00+tanT1Y*this.i1e01+tanT1Z*this.i1e02;
+        var tanTU1Y=tanT1X*this.i1e10+tanT1Y*this.i1e11+tanT1Z*this.i1e12;
+        var tanTU1Z=tanT1X*this.i1e20+tanT1Y*this.i1e21+tanT1Z*this.i1e22;
+        var tanTU2X=tanT2X*this.i2e00+tanT2Y*this.i2e01+tanT2Z*this.i2e02;
+        var tanTU2Y=tanT2X*this.i2e10+tanT2Y*this.i2e11+tanT2Z*this.i2e12;
+        var tanTU2Z=tanT2X*this.i2e20+tanT2Y*this.i2e21+tanT2Z*this.i2e22;
+        var binTU1X=binT1X*this.i1e00+binT1Y*this.i1e01+binT1Z*this.i1e02;
+        var binTU1Y=binT1X*this.i1e10+binT1Y*this.i1e11+binT1Z*this.i1e12;
+        var binTU1Z=binT1X*this.i1e20+binT1Y*this.i1e21+binT1Z*this.i1e22;
+        var binTU2X=binT2X*this.i2e00+binT2Y*this.i2e01+binT2Z*this.i2e02;
+        var binTU2Y=binT2X*this.i2e10+binT2Y*this.i2e11+binT2Z*this.i2e12;
+        var binTU2Z=binT2X*this.i2e20+binT2Y*this.i2e21+binT2Z*this.i2e22;
+        c.norT1X=norT1X;
+        c.norT1Y=norT1Y;
+        c.norT1Z=norT1Z;
+        c.tanT1X=tanT1X;
+        c.tanT1Y=tanT1Y;
+        c.tanT1Z=tanT1Z;
+        c.binT1X=binT1X;
+        c.binT1Y=binT1Y;
+        c.binT1Z=binT1Z;
+        c.norT2X=norT2X;
+        c.norT2Y=norT2Y;
+        c.norT2Z=norT2Z;
+        c.tanT2X=tanT2X;
+        c.tanT2Y=tanT2Y;
+        c.tanT2Z=tanT2Z;
+        c.binT2X=binT2X;
+        c.binT2Y=binT2Y;
+        c.binT2Z=binT2Z;
+        c.norTU1X=norTU1X;
+        c.norTU1Y=norTU1Y;
+        c.norTU1Z=norTU1Z;
+        c.tanTU1X=tanTU1X;
+        c.tanTU1Y=tanTU1Y;
+        c.tanTU1Z=tanTU1Z;
+        c.binTU1X=binTU1X;
+        c.binTU1Y=binTU1Y;
+        c.binTU1Z=binTU1Z;
+        c.norTU2X=norTU2X;
+        c.norTU2Y=norTU2Y;
+        c.norTU2Z=norTU2Z;
+        c.tanTU2X=tanTU2X;
+        c.tanTU2Y=tanTU2Y;
+        c.tanTU2Z=tanTU2Z;
+        c.binTU2X=binTU2X;
+        c.binTU2Y=binTU2Y;
+        c.binTU2Z=binTU2Z;
+        tmp1X=norT1X*this.i1e00+norT1Y*this.i1e01+norT1Z*this.i1e02;
+        tmp1Y=norT1X*this.i1e10+norT1Y*this.i1e11+norT1Z*this.i1e12;
+        tmp1Z=norT1X*this.i1e20+norT1Y*this.i1e21+norT1Z*this.i1e22;
+        tmp2X=tmp1Y*rp1Z-tmp1Z*rp1Y;
+        tmp2Y=tmp1Z*rp1X-tmp1X*rp1Z;
+        tmp2Z=tmp1X*rp1Y-tmp1Y*rp1X;
+        tmp1X=norT2X*this.i2e00+norT2Y*this.i2e01+norT2Z*this.i2e02;
+        tmp1Y=norT2X*this.i2e10+norT2Y*this.i2e11+norT2Z*this.i2e12;
+        tmp1Z=norT2X*this.i2e20+norT2Y*this.i2e21+norT2Z*this.i2e22;
+        tmp2X+=tmp1Y*rp2Z-tmp1Z*rp2Y;
+        tmp2Y+=tmp1Z*rp2X-tmp1X*rp2Z;
+        tmp2Z+=tmp1X*rp2Y-tmp1Y*rp2X;
+        var norDen=1/(m1m2+norX*tmp2X+norY*tmp2Y+norZ*tmp2Z);
+        tmp1X=tanT1X*this.i1e00+tanT1Y*this.i1e01+tanT1Z*this.i1e02;
+        tmp1Y=tanT1X*this.i1e10+tanT1Y*this.i1e11+tanT1Z*this.i1e12;
+        tmp1Z=tanT1X*this.i1e20+tanT1Y*this.i1e21+tanT1Z*this.i1e22;
+        tmp2X=tmp1Y*rp1Z-tmp1Z*rp1Y;
+        tmp2Y=tmp1Z*rp1X-tmp1X*rp1Z;
+        tmp2Z=tmp1X*rp1Y-tmp1Y*rp1X;
+        tmp1X=tanT2X*this.i2e00+tanT2Y*this.i2e01+tanT2Z*this.i2e02;
+        tmp1Y=tanT2X*this.i2e10+tanT2Y*this.i2e11+tanT2Z*this.i2e12;
+        tmp1Z=tanT2X*this.i2e20+tanT2Y*this.i2e21+tanT2Z*this.i2e22;
+        tmp2X+=tmp1Y*rp2Z-tmp1Z*rp2Y;
+        tmp2Y+=tmp1Z*rp2X-tmp1X*rp2Z;
+        tmp2Z+=tmp1X*rp2Y-tmp1Y*rp2X;
+        var tanDen=1/(m1m2+tanX*tmp2X+tanY*tmp2Y+tanZ*tmp2Z);
+        tmp1X=binT1X*this.i1e00+binT1Y*this.i1e01+binT1Z*this.i1e02;
+        tmp1Y=binT1X*this.i1e10+binT1Y*this.i1e11+binT1Z*this.i1e12;
+        tmp1Z=binT1X*this.i1e20+binT1Y*this.i1e21+binT1Z*this.i1e22;
+        tmp2X=tmp1Y*rp1Z-tmp1Z*rp1Y;
+        tmp2Y=tmp1Z*rp1X-tmp1X*rp1Z;
+        tmp2Z=tmp1X*rp1Y-tmp1Y*rp1X;
+        tmp1X=binT2X*this.i2e00+binT2Y*this.i2e01+binT2Z*this.i2e02;
+        tmp1Y=binT2X*this.i2e10+binT2Y*this.i2e11+binT2Z*this.i2e12;
+        tmp1Z=binT2X*this.i2e20+binT2Y*this.i2e21+binT2Z*this.i2e22;
+        tmp2X+=tmp1Y*rp2Z-tmp1Z*rp2Y;
+        tmp2Y+=tmp1Z*rp2X-tmp1X*rp2Z;
+        tmp2Z+=tmp1X*rp2Y-tmp1Y*rp2X;
+        var binDen=1/(m1m2+binX*tmp2X+binY*tmp2Y+binZ*tmp2Z);
+        c.norDen=norDen;
+        c.tanDen=tanDen;
+        c.binDen=binDen;
+        if(p.warmStarted){
+            var norImp=p.normalImpulse;
+            this.lv1.x+=c.norU1X*norImp;
+            this.lv1.y+=c.norU1Y*norImp;
+            this.lv1.z+=c.norU1Z*norImp;
+            this.av1.x+=norTU1X*norImp;
+            this.av1.y+=norTU1Y*norImp;
+            this.av1.z+=norTU1Z*norImp;
+            this.lv2.x-=c.norU2X*norImp;
+            this.lv2.y-=c.norU2Y*norImp;
+            this.lv2.z-=c.norU2Z*norImp;
+            this.av2.x-=norTU2X*norImp;
+            this.av2.y-=norTU2Y*norImp;
+            this.av2.z-=norTU2Z*norImp;
+            c.norImp=norImp;
+            c.tanImp=0;
+            c.binImp=0;
     rvn=0; // disable bouncing
-    }else{
+}else{
     c.norImp=0;
     c.tanImp=0;
     c.binImp=0;
-    }
-    if(rvn>-1){
+}
+if(rvn>-1){
     rvn=0; // disable bouncing
-    }
-    var norTar=this.restitution*-rvn;
+}
+var norTar=this.restitution*-rvn;
     var sepV=-(p.penetration+0.005)*invTimeStep*0.05; // allow 0.5cm error
     if(norTar<sepV)norTar=sepV;
     c.norTar=norTar;
     c.last=i==this.num-1;
     c=c.next;
-    }
+}
 }
 OIMO.ContactConstraint.prototype.solve = function(){
     var lv1x=this.lv1.x;
@@ -6563,7 +6580,7 @@ OIMO.MassInfo = function(){
  * A shape is used to detect collisions of rigid bodies.
  * @author saharan
  */
-OIMO.Shape = function(config){
+ OIMO.Shape = function(config){
     // The global identification of the shape.
     // This value should be unique to the shape.
     this.id = OIMO.nextID++;
@@ -6633,17 +6650,17 @@ OIMO.Shape.prototype = {
  * @author saharan
  */
 
-OIMO.ShapeConfig = function(){
+ OIMO.ShapeConfig = function(){
 	// The position of the shape in parent's coordinate system.
     this.relativePosition = new OIMO.Vec3();
     // The rotation matrix of the shape in parent's coordinate system.
     this.relativeRotation = new OIMO.Mat33();
     // The coefficient of friction of the shape.
-    this.friction = 0.4;
+    this.friction = .4;
     // The coefficient of restitution of the shape.
-    this.restitution = 0.2;
+    this.restitution = 0.1;
     // The density of the shape.
-    this.density = 1;
+    this.density = 50;
     // The bits of the collision groups to which the shape belongs.
     this.belongsTo = 1;
     // The bits of the collision groups with which the shape collides.
@@ -6681,7 +6698,7 @@ OIMO.BoxShape.prototype.calculateMassInfo = function(out){
         mass*(this.height*this.height+this.depth*this.depth)/12,0,0,
         0,mass*(this.width*this.width+this.depth*this.depth)/12,0,
         0,0,mass*(this.width*this.width+this.height*this.height)/12
-    );
+        );
 }
 OIMO.BoxShape.prototype.updateProxy = function(){
     var te = this.rotation.elements;
@@ -6775,7 +6792,7 @@ OIMO.BoxShape.prototype.updateProxy = function(){
         this.position.x-w-0.005,this.position.x+w+0.005,
         this.position.y-h-0.005,this.position.y+h+0.005,
         this.position.z-d-0.005,this.position.z+d+0.005
-    );
+        );
     if(this.proxy!==null){
         this.proxy.update();
     }
@@ -6784,7 +6801,7 @@ OIMO.BoxShape.prototype.updateProxy = function(){
  * A sphere shape.
  * @author saharan
  */
-OIMO.SphereShape = function(config,radius){
+ OIMO.SphereShape = function(config,radius){
     OIMO.Shape.call( this, config);
     // The radius of the shape.
     this.radius = radius;
@@ -6802,7 +6819,7 @@ OIMO.SphereShape.prototype.updateProxy = function(){
         this.position.x-this.radius-0.005,this.position.x+this.radius+0.005,
         this.position.y-this.radius-0.005,this.position.y+this.radius+0.005,
         this.position.z-this.radius-0.005,this.position.z+this.radius+0.005
-    );
+        );
     if(this.proxy!==null){ this.proxy.update(); }
 }
 OIMO.CollisionDetector = function(){
@@ -6820,7 +6837,7 @@ OIMO.CollisionDetector.prototype = {
  * A collision detector which detects collisions between two boxes.
  * @author saharan
  */
-OIMO.BoxBoxCollisionDetector = function(){
+ OIMO.BoxBoxCollisionDetector = function(){
     OIMO.CollisionDetector.call( this );
     this.clipVertices1=new OIMO_ARRAY_TYPE(24); // 8 vertices x,y,z
     this.clipVertices2=new OIMO_ARRAY_TYPE(24);
@@ -7862,7 +7879,7 @@ OIMO.BoxBoxCollisionDetector.prototype.detectCollision = function(shape1,shape2,
             q3x=V2[21]; q3y=V2[22]; q3z=V2[23];//vertex8
             q4x=V2[15]; q4y=V2[16]; q4z=V2[17];//vertex6
         }
-  
+
     }
     // clip vertices
     var numClipVertices;
@@ -7894,322 +7911,322 @@ OIMO.BoxBoxCollisionDetector.prototype.detectCollision = function(shape1,shape2,
 
     //var i = 4;
     //while(i--){
-    for(var i=0;i<4;i++){
-        index=i*3;
-        x2=this.clipVertices1[index];
-        y2=this.clipVertices1[index+1];
-        z2=this.clipVertices1[index+2];
-        dot2=(x2-cx-s1x)*n1x+(y2-cy-s1y)*n1y+(z2-cz-s1z)*n1z;
-        if(dot1>0){
-            if(dot2>0){
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                this.clipVertices2[index]=x2;
-                this.clipVertices2[index+1]=y2;
-                this.clipVertices2[index+2]=z2;
+        for(var i=0;i<4;i++){
+            index=i*3;
+            x2=this.clipVertices1[index];
+            y2=this.clipVertices1[index+1];
+            z2=this.clipVertices1[index+2];
+            dot2=(x2-cx-s1x)*n1x+(y2-cy-s1y)*n1y+(z2-cz-s1z)*n1z;
+            if(dot1>0){
+                if(dot2>0){
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    this.clipVertices2[index]=x2;
+                    this.clipVertices2[index+1]=y2;
+                    this.clipVertices2[index+2]=z2;
+                }else{
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    t=dot1/(dot1-dot2);
+                    this.clipVertices2[index]=x1+(x2-x1)*t;
+                    this.clipVertices2[index+1]=y1+(y2-y1)*t;
+                    this.clipVertices2[index+2]=z1+(z2-z1)*t;
+                }
             }else{
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                t=dot1/(dot1-dot2);
-                this.clipVertices2[index]=x1+(x2-x1)*t;
-                this.clipVertices2[index+1]=y1+(y2-y1)*t;
-                this.clipVertices2[index+2]=z1+(z2-z1)*t;
+                if(dot2>0){
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    t=dot1/(dot1-dot2);
+                    this.clipVertices2[index]=x1+(x2-x1)*t;
+                    this.clipVertices2[index+1]=y1+(y2-y1)*t;
+                    this.clipVertices2[index+2]=z1+(z2-z1)*t;
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    this.clipVertices2[index]=x2;
+                    this.clipVertices2[index+1]=y2;
+                    this.clipVertices2[index+2]=z2;
+                }
             }
-        }else{
-            if(dot2>0){
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                t=dot1/(dot1-dot2);
-                this.clipVertices2[index]=x1+(x2-x1)*t;
-                this.clipVertices2[index+1]=y1+(y2-y1)*t;
-                this.clipVertices2[index+2]=z1+(z2-z1)*t;
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                this.clipVertices2[index]=x2;
-                this.clipVertices2[index+1]=y2;
-                this.clipVertices2[index+2]=z2;
-            }
+            x1=x2;
+            y1=y2;
+            z1=z2;
+            dot1=dot2;
         }
-        x1=x2;
-        y1=y2;
-        z1=z2;
-        dot1=dot2;
-    }
 
-    numClipVertices=numAddedClipVertices;
-    if(numClipVertices==0)return;
-    numAddedClipVertices=0;
-    index=(numClipVertices-1)*3;
-    x1=this.clipVertices2[index];
-    y1=this.clipVertices2[index+1];
-    z1=this.clipVertices2[index+2];
-    dot1=(x1-cx-s2x)*n2x+(y1-cy-s2y)*n2y+(z1-cz-s2z)*n2z;
+        numClipVertices=numAddedClipVertices;
+        if(numClipVertices==0)return;
+        numAddedClipVertices=0;
+        index=(numClipVertices-1)*3;
+        x1=this.clipVertices2[index];
+        y1=this.clipVertices2[index+1];
+        z1=this.clipVertices2[index+2];
+        dot1=(x1-cx-s2x)*n2x+(y1-cy-s2y)*n2y+(z1-cz-s2z)*n2z;
 
     //i = numClipVertices;
     //while(i--){
-    for(i=0;i<numClipVertices;i++){
-        index=i*3;
-        x2=this.clipVertices2[index];
-        y2=this.clipVertices2[index+1];
-        z2=this.clipVertices2[index+2];
-        dot2=(x2-cx-s2x)*n2x+(y2-cy-s2y)*n2y+(z2-cz-s2z)*n2z;
-        if(dot1>0){
-            if(dot2>0){
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                this.clipVertices1[index]=x2;
-                this.clipVertices1[index+1]=y2;
-                this.clipVertices1[index+2]=z2;
+        for(i=0;i<numClipVertices;i++){
+            index=i*3;
+            x2=this.clipVertices2[index];
+            y2=this.clipVertices2[index+1];
+            z2=this.clipVertices2[index+2];
+            dot2=(x2-cx-s2x)*n2x+(y2-cy-s2y)*n2y+(z2-cz-s2z)*n2z;
+            if(dot1>0){
+                if(dot2>0){
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    this.clipVertices1[index]=x2;
+                    this.clipVertices1[index+1]=y2;
+                    this.clipVertices1[index+2]=z2;
+                }else{
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    t=dot1/(dot1-dot2);
+                    this.clipVertices1[index]=x1+(x2-x1)*t;
+                    this.clipVertices1[index+1]=y1+(y2-y1)*t;
+                    this.clipVertices1[index+2]=z1+(z2-z1)*t;
+                }
             }else{
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                t=dot1/(dot1-dot2);
-                this.clipVertices1[index]=x1+(x2-x1)*t;
-                this.clipVertices1[index+1]=y1+(y2-y1)*t;
-                this.clipVertices1[index+2]=z1+(z2-z1)*t;
+                if(dot2>0){
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    t=dot1/(dot1-dot2);
+                    this.clipVertices1[index]=x1+(x2-x1)*t;
+                    this.clipVertices1[index+1]=y1+(y2-y1)*t;
+                    this.clipVertices1[index+2]=z1+(z2-z1)*t;
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    this.clipVertices1[index]=x2;
+                    this.clipVertices1[index+1]=y2;
+                    this.clipVertices1[index+2]=z2;
+                }
             }
-        }else{
-            if(dot2>0){
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                t=dot1/(dot1-dot2);
-                this.clipVertices1[index]=x1+(x2-x1)*t;
-                this.clipVertices1[index+1]=y1+(y2-y1)*t;
-                this.clipVertices1[index+2]=z1+(z2-z1)*t;
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                this.clipVertices1[index]=x2;
-                this.clipVertices1[index+1]=y2;
-                this.clipVertices1[index+2]=z2;
-            }
+            x1=x2;
+            y1=y2;
+            z1=z2;
+            dot1=dot2;
         }
-        x1=x2;
-        y1=y2;
-        z1=z2;
-        dot1=dot2;
-    }
 
-    numClipVertices=numAddedClipVertices;
-    if(numClipVertices==0)return;
-    numAddedClipVertices=0;
-    index=(numClipVertices-1)*3;
-    x1=this.clipVertices1[index];
-    y1=this.clipVertices1[index+1];
-    z1=this.clipVertices1[index+2];
-    dot1=(x1-cx+s1x)*-n1x+(y1-cy+s1y)*-n1y+(z1-cz+s1z)*-n1z;
+        numClipVertices=numAddedClipVertices;
+        if(numClipVertices==0)return;
+        numAddedClipVertices=0;
+        index=(numClipVertices-1)*3;
+        x1=this.clipVertices1[index];
+        y1=this.clipVertices1[index+1];
+        z1=this.clipVertices1[index+2];
+        dot1=(x1-cx+s1x)*-n1x+(y1-cy+s1y)*-n1y+(z1-cz+s1z)*-n1z;
 
     //i = numClipVertices;
     //while(i--){
-    for(i=0;i<numClipVertices;i++){
-        index=i*3;
-        x2=this.clipVertices1[index];
-        y2=this.clipVertices1[index+1];
-        z2=this.clipVertices1[index+2];
-        dot2=(x2-cx+s1x)*-n1x+(y2-cy+s1y)*-n1y+(z2-cz+s1z)*-n1z;
-        if(dot1>0){
-            if(dot2>0){
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                this.clipVertices2[index]=x2;
-                this.clipVertices2[index+1]=y2;
-                this.clipVertices2[index+2]=z2;
+        for(i=0;i<numClipVertices;i++){
+            index=i*3;
+            x2=this.clipVertices1[index];
+            y2=this.clipVertices1[index+1];
+            z2=this.clipVertices1[index+2];
+            dot2=(x2-cx+s1x)*-n1x+(y2-cy+s1y)*-n1y+(z2-cz+s1z)*-n1z;
+            if(dot1>0){
+                if(dot2>0){
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    this.clipVertices2[index]=x2;
+                    this.clipVertices2[index+1]=y2;
+                    this.clipVertices2[index+2]=z2;
+                }else{
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    t=dot1/(dot1-dot2);
+                    this.clipVertices2[index]=x1+(x2-x1)*t;
+                    this.clipVertices2[index+1]=y1+(y2-y1)*t;
+                    this.clipVertices2[index+2]=z1+(z2-z1)*t;
+                }
             }else{
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                t=dot1/(dot1-dot2);
-                this.clipVertices2[index]=x1+(x2-x1)*t;
-                this.clipVertices2[index+1]=y1+(y2-y1)*t;
-                this.clipVertices2[index+2]=z1+(z2-z1)*t;
+                if(dot2>0){
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    t=dot1/(dot1-dot2);
+                    this.clipVertices2[index]=x1+(x2-x1)*t;
+                    this.clipVertices2[index+1]=y1+(y2-y1)*t;
+                    this.clipVertices2[index+2]=z1+(z2-z1)*t;
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    this.clipVertices2[index]=x2;
+                    this.clipVertices2[index+1]=y2;
+                    this.clipVertices2[index+2]=z2;
+                }
             }
-        }else{
-            if(dot2>0){
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                t=dot1/(dot1-dot2);
-                this.clipVertices2[index]=x1+(x2-x1)*t;
-                this.clipVertices2[index+1]=y1+(y2-y1)*t;
-                this.clipVertices2[index+2]=z1+(z2-z1)*t;
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                this.clipVertices2[index]=x2;
-                this.clipVertices2[index+1]=y2;
-                this.clipVertices2[index+2]=z2;
-            }
+            x1=x2;
+            y1=y2;
+            z1=z2;
+            dot1=dot2;
         }
-        x1=x2;
-        y1=y2;
-        z1=z2;
-        dot1=dot2;
-    }
 
-    numClipVertices=numAddedClipVertices;
-    if(numClipVertices==0)return;
-    numAddedClipVertices=0;
-    index=(numClipVertices-1)*3;
-    x1=this.clipVertices2[index];
-    y1=this.clipVertices2[index+1];
-    z1=this.clipVertices2[index+2];
-    dot1=(x1-cx+s2x)*-n2x+(y1-cy+s2y)*-n2y+(z1-cz+s2z)*-n2z;
+        numClipVertices=numAddedClipVertices;
+        if(numClipVertices==0)return;
+        numAddedClipVertices=0;
+        index=(numClipVertices-1)*3;
+        x1=this.clipVertices2[index];
+        y1=this.clipVertices2[index+1];
+        z1=this.clipVertices2[index+2];
+        dot1=(x1-cx+s2x)*-n2x+(y1-cy+s2y)*-n2y+(z1-cz+s2z)*-n2z;
 
     //i = numClipVertices;
     //while(i--){
-    for(i=0;i<numClipVertices;i++){
-        index=i*3;
-        x2=this.clipVertices2[index];
-        y2=this.clipVertices2[index+1];
-        z2=this.clipVertices2[index+2];
-        dot2=(x2-cx+s2x)*-n2x+(y2-cy+s2y)*-n2y+(z2-cz+s2z)*-n2z;
-        if(dot1>0){
-            if(dot2>0){
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                this.clipVertices1[index]=x2;
-                this.clipVertices1[index+1]=y2;
-                this.clipVertices1[index+2]=z2;
+        for(i=0;i<numClipVertices;i++){
+            index=i*3;
+            x2=this.clipVertices2[index];
+            y2=this.clipVertices2[index+1];
+            z2=this.clipVertices2[index+2];
+            dot2=(x2-cx+s2x)*-n2x+(y2-cy+s2y)*-n2y+(z2-cz+s2z)*-n2z;
+            if(dot1>0){
+                if(dot2>0){
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    this.clipVertices1[index]=x2;
+                    this.clipVertices1[index+1]=y2;
+                    this.clipVertices1[index+2]=z2;
+                }else{
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    t=dot1/(dot1-dot2);
+                    this.clipVertices1[index]=x1+(x2-x1)*t;
+                    this.clipVertices1[index+1]=y1+(y2-y1)*t;
+                    this.clipVertices1[index+2]=z1+(z2-z1)*t;
+                }
             }else{
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                t=dot1/(dot1-dot2);
-                this.clipVertices1[index]=x1+(x2-x1)*t;
-                this.clipVertices1[index+1]=y1+(y2-y1)*t;
-                this.clipVertices1[index+2]=z1+(z2-z1)*t;
+                if(dot2>0){
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    t=dot1/(dot1-dot2);
+                    this.clipVertices1[index]=x1+(x2-x1)*t;
+                    this.clipVertices1[index+1]=y1+(y2-y1)*t;
+                    this.clipVertices1[index+2]=z1+(z2-z1)*t;
+                    index=numAddedClipVertices*3;
+                    numAddedClipVertices++;
+                    this.clipVertices1[index]=x2;
+                    this.clipVertices1[index+1]=y2;
+                    this.clipVertices1[index+2]=z2;
+                }
             }
-        }else{
-            if(dot2>0){
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                t=dot1/(dot1-dot2);
-                this.clipVertices1[index]=x1+(x2-x1)*t;
-                this.clipVertices1[index+1]=y1+(y2-y1)*t;
-                this.clipVertices1[index+2]=z1+(z2-z1)*t;
-                index=numAddedClipVertices*3;
-                numAddedClipVertices++;
-                this.clipVertices1[index]=x2;
-                this.clipVertices1[index+1]=y2;
-                this.clipVertices1[index+2]=z2;
-            }
+            x1=x2;
+            y1=y2;
+            z1=z2;
+            dot1=dot2;
         }
-        x1=x2;
-        y1=y2;
-        z1=z2;
-        dot1=dot2;
-    }
 
-    numClipVertices=numAddedClipVertices;
-    if(swap){
-        var tb=b1;
-        b1=b2;
-        b2=tb;
-    }
-    if(numClipVertices==0)return;
-    var flipped=b1!=shape1;
-    if(numClipVertices>4){
-        x1=(q1x+q2x+q3x+q4x)*0.25;
-        y1=(q1y+q2y+q3y+q4y)*0.25;
-        z1=(q1z+q2z+q3z+q4z)*0.25;
-        n1x=q1x-x1;
-        n1y=q1y-y1;
-        n1z=q1z-z1;
-        n2x=q2x-x1;
-        n2y=q2y-y1;
-        n2z=q2z-z1;
-        var index1=0;
-        var index2=0;
-        var index3=0;
-        var index4=0;
-        var maxDot=-this.INF;
-        minDot=this.INF;
+        numClipVertices=numAddedClipVertices;
+        if(swap){
+            var tb=b1;
+            b1=b2;
+            b2=tb;
+        }
+        if(numClipVertices==0)return;
+        var flipped=b1!=shape1;
+        if(numClipVertices>4){
+            x1=(q1x+q2x+q3x+q4x)*0.25;
+            y1=(q1y+q2y+q3y+q4y)*0.25;
+            z1=(q1z+q2z+q3z+q4z)*0.25;
+            n1x=q1x-x1;
+            n1y=q1y-y1;
+            n1z=q1z-z1;
+            n2x=q2x-x1;
+            n2y=q2y-y1;
+            n2z=q2z-z1;
+            var index1=0;
+            var index2=0;
+            var index3=0;
+            var index4=0;
+            var maxDot=-this.INF;
+            minDot=this.INF;
 
         //i = numClipVertices;
         //while(i--){
-        for(i=0;i<numClipVertices;i++){
-            this.used[i]=false;
-            index=i*3;
-            x1=this.clipVertices1[index];
-            y1=this.clipVertices1[index+1];
-            z1=this.clipVertices1[index+2];
-            dot=x1*n1x+y1*n1y+z1*n1z;
-            if(dot<minDot){
-                minDot=dot;
-                index1=i;
+            for(i=0;i<numClipVertices;i++){
+                this.used[i]=false;
+                index=i*3;
+                x1=this.clipVertices1[index];
+                y1=this.clipVertices1[index+1];
+                z1=this.clipVertices1[index+2];
+                dot=x1*n1x+y1*n1y+z1*n1z;
+                if(dot<minDot){
+                    minDot=dot;
+                    index1=i;
+                }
+                if(dot>maxDot){
+                    maxDot=dot;
+                    index3=i;
+                }
             }
-            if(dot>maxDot){
-                maxDot=dot;
-                index3=i;
-            }
-        }
 
-        this.used[index1]=true;
-        this.used[index3]=true;
-        maxDot=-this.INF;
-        minDot=this.INF;
+            this.used[index1]=true;
+            this.used[index3]=true;
+            maxDot=-this.INF;
+            minDot=this.INF;
 
         //i = numClipVertices;
         //while(i--){
-        for(i=0;i<numClipVertices;i++){
-            if(this.used[i])continue;
-            index=i*3;
-            x1=this.clipVertices1[index];
-            y1=this.clipVertices1[index+1];
-            z1=this.clipVertices1[index+2];
-            dot=x1*n2x+y1*n2y+z1*n2z;
-            if(dot<minDot){
-                minDot=dot;
-                index2=i;
+            for(i=0;i<numClipVertices;i++){
+                if(this.used[i])continue;
+                index=i*3;
+                x1=this.clipVertices1[index];
+                y1=this.clipVertices1[index+1];
+                z1=this.clipVertices1[index+2];
+                dot=x1*n2x+y1*n2y+z1*n2z;
+                if(dot<minDot){
+                    minDot=dot;
+                    index2=i;
+                }
+                if(dot>maxDot){
+                    maxDot=dot;
+                    index4=i;
+                }
             }
-            if(dot>maxDot){
-                maxDot=dot;
-                index4=i;
-            }
-        }
 
-        index=index1*3;
-        x1=this.clipVertices1[index];
-        y1=this.clipVertices1[index+1];
-        z1=this.clipVertices1[index+2];
-        dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
-        if(dot<0) manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
-        
-        index=index2*3;
-        x1=this.clipVertices1[index];
-        y1=this.clipVertices1[index+1];
-        z1=this.clipVertices1[index+2];
-        dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
-        if(dot<0) manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
-        
-        index=index3*3;
-        x1=this.clipVertices1[index];
-        y1=this.clipVertices1[index+1];
-        z1=this.clipVertices1[index+2];
-        dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
-        if(dot<0) manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
-        
-        index=index4*3;
-        x1=this.clipVertices1[index];
-        y1=this.clipVertices1[index+1];
-        z1=this.clipVertices1[index+2];
-        dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
-        if(dot<0) manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
-        
-    }else{
-        //i = numClipVertices;
-        //while(i--){
-        for(i=0;i<numClipVertices;i++){
-            index=i*3;
+            index=index1*3;
             x1=this.clipVertices1[index];
             y1=this.clipVertices1[index+1];
             z1=this.clipVertices1[index+2];
             dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
-            if(dot<0)manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
-        }
-    }
+            if(dot<0) manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
 
-}
+            index=index2*3;
+            x1=this.clipVertices1[index];
+            y1=this.clipVertices1[index+1];
+            z1=this.clipVertices1[index+2];
+            dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
+            if(dot<0) manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
+
+            index=index3*3;
+            x1=this.clipVertices1[index];
+            y1=this.clipVertices1[index+1];
+            z1=this.clipVertices1[index+2];
+            dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
+            if(dot<0) manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
+
+            index=index4*3;
+            x1=this.clipVertices1[index];
+            y1=this.clipVertices1[index+1];
+            z1=this.clipVertices1[index+2];
+            dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
+            if(dot<0) manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
+
+        }else{
+        //i = numClipVertices;
+        //while(i--){
+            for(i=0;i<numClipVertices;i++){
+                index=i*3;
+                x1=this.clipVertices1[index];
+                y1=this.clipVertices1[index+1];
+                z1=this.clipVertices1[index+2];
+                dot=(x1-cx)*nx+(y1-cy)*ny+(z1-cz)*nz;
+                if(dot<0)manifold.addPoint(x1,y1,z1,nx,ny,nz,dot,flipped);
+            }
+        }
+
+    }
 /**
  * A collision detector which detects collisions between sphere and box.
  * @author saharan
  */
-OIMO.SphereBoxCollisionDetector = function(flip){
+ OIMO.SphereBoxCollisionDetector = function(flip){
     OIMO.CollisionDetector.call( this );
     this.flip=flip;
 }
@@ -8294,31 +8311,31 @@ OIMO.SphereBoxCollisionDetector.prototype.detectCollision = function(shape1,shap
         if(dx<dy){
             if(dx<dz){
                 len=dx-hw;
-            if(sx<0){
-                sx=-hw;
-                dx=D[0];
-                dy=D[1];
-                dz=D[2];
+                if(sx<0){
+                    sx=-hw;
+                    dx=D[0];
+                    dy=D[1];
+                    dz=D[2];
+                }else{
+                    sx=hw;
+                    dx=-D[0];
+                    dy=-D[1];
+                    dz=-D[2];
+                }
             }else{
-                sx=hw;
-                dx=-D[0];
-                dy=-D[1];
-                dz=-D[2];
+                len=dz-hd;
+                if(sz<0){
+                    sz=-hd;
+                    dx=D[6];
+                    dy=D[7];
+                    dz=D[8];
+                }else{
+                    sz=hd;
+                    dx=-D[6];
+                    dy=-D[7];
+                    dz=-D[8];
+                }
             }
-        }else{
-            len=dz-hd;
-            if(sz<0){
-                sz=-hd;
-                dx=D[6];
-                dy=D[7];
-                dz=D[8];
-            }else{
-                sz=hd;
-                dx=-D[6];
-                dy=-D[7];
-                dz=-D[8];
-            }
-        }
         }else{
             if(dy<dz){
                 len=dy-hh;
@@ -8345,13 +8362,13 @@ OIMO.SphereBoxCollisionDetector.prototype.detectCollision = function(shape1,shap
                     dx=-D[6];
                     dy=-D[7];
                     dz=-D[8];
+                }
             }
         }
-    }
-    cx=pbx+sx*D[0]+sy*D[3]+sz*D[6];
-    cy=pby+sx*D[1]+sy*D[4]+sz*D[7];
-    cz=pbz+sx*D[2]+sy*D[5]+sz*D[8];
-    manifold.addPoint(psx+rad*dx,psy+rad*dy,psz+rad*dz,dx,dy,dz,len-rad,this.flip);
+        cx=pbx+sx*D[0]+sy*D[3]+sz*D[6];
+        cy=pby+sx*D[1]+sy*D[4]+sz*D[7];
+        cz=pbz+sx*D[2]+sy*D[5]+sz*D[8];
+        manifold.addPoint(psx+rad*dx,psy+rad*dy,psz+rad*dz,dx,dy,dz,len-rad,this.flip);
     }else{
         cx=pbx+sx*D[0]+sy*D[3]+sz*D[6];
         cy=pby+sx*D[1]+sy*D[4]+sz*D[7];
@@ -8375,7 +8392,7 @@ OIMO.SphereBoxCollisionDetector.prototype.detectCollision = function(shape1,shap
  * A collision detector which detects collisions between two spheres.
  * @author saharan
  */
-OIMO.SphereSphereCollisionDetector = function(){
+ OIMO.SphereSphereCollisionDetector = function(){
     OIMO.CollisionDetector.call( this );
 }
 OIMO.SphereSphereCollisionDetector.prototype = Object.create( OIMO.CollisionDetector.prototype );
@@ -8554,17 +8571,17 @@ OIMO.BroadPhase.prototype = {
             (!b1.isDynamic&&!b2.isDynamic) || // static or kinematic object
             (s1.belongsTo&s2.collidesWith)==0 ||
              (s2.belongsTo&s1.collidesWith)==0 // collision filtering
-        ){ return false; }
-        var js;
+             ){ return false; }
+            var js;
         if(b1.numJoints<b2.numJoints) js=b1.jointLink;
         else js=b2.jointLink;
         while(js!=null){
-           var joint=js.joint;
-           if( !joint.allowCollision && (joint.body1==b1&&joint.body2==b2 || joint.body1==b2&&joint.body2==b1) ){ return false; }
-           js=js.next;
-        }
-        return true;
-    },
+         var joint=js.joint;
+         if( !joint.allowCollision && (joint.body1==b1&&joint.body2==b2 || joint.body1==b2&&joint.body2==b1) ){ return false; }
+         js=js.next;
+     }
+     return true;
+ },
     // Detect overlapping pairs.
     detectPairs:function(){
         while(this.numPairs>0){
@@ -8587,23 +8604,23 @@ OIMO.BroadPhase.prototype = {
             //var i = this.bufferSize;
             //var j;
             //while(i--){
-            for(var i=0, j=this.bufferSize;i<j;i++){
-                newPairs[i]=this.pairs[i];
-            }
-            i = this.newBufferSize;
+                for(var i=0, j=this.bufferSize;i<j;i++){
+                    newPairs[i]=this.pairs[i];
+                }
+                i = this.newBufferSize;
             //j = this.bufferSize;
             //while(i-- >= j){
-            for(i=this.bufferSize, j=newBufferSize;i<j;i++){
-                newPairs[i]=new OIMO.Pair();
+                for(i=this.bufferSize, j=newBufferSize;i<j;i++){
+                    newPairs[i]=new OIMO.Pair();
+                }
+                this.pairs=newPairs;
+                this.bufferSize=newBufferSize;
             }
-            this.pairs=newPairs;
-            this.bufferSize=newBufferSize;
+            var pair=this.pairs[this.numPairs++];
+            pair.shape1=s1;
+            pair.shape2=s2;
         }
-        var pair=this.pairs[this.numPairs++];
-        pair.shape1=s1;
-        pair.shape2=s2;
     }
-}
 /**
 * A broad-phase algorithm with brute-force search.
 * This always checks for all possible pairs.
@@ -8651,8 +8668,8 @@ OIMO.BruteForceBroadPhase.prototype.removeProxy = function (proxy) {
 OIMO.BruteForceBroadPhase.prototype.collectPairs = function () {
     this.numPairChecks=this.numProxies*(this.numProxies-1)>>1;
     //this.numPairChecks=this.numProxies*(this.numProxies-1)*0.5;
-        var i = this.numProxies;
-        while(i--){
+    var i = this.numProxies;
+    while(i--){
         //for(var i=0, l=this.numProxies;i<l;i++){
             var p1=this.proxies[i];
             var b1=p1.aabb;
@@ -8666,10 +8683,10 @@ OIMO.BruteForceBroadPhase.prototype.collectPairs = function () {
                 if(b1.maxX<b2.minX||b1.minX>b2.maxX|| b1.maxY<b2.minY||b1.minY>b2.maxY|| b1.maxZ<b2.minZ||b1.minZ>b2.maxZ|| !this.isAvailablePair(s1,s2) ){
                     continue;
                 }
-                    this.addPair(s1,s2);
-                }}
+                this.addPair(s1,s2);
+            }}
         }
-}
+    }
 /**
 * A pair of shapes that may collide.
 * @author saharan
@@ -8720,7 +8737,7 @@ OIMO.SAPAxis.prototype = {
                     minIndex=i;
                 }else{
                     maxIndex=i;
-                break;
+                    break;
                 }
             }
         }
@@ -8874,7 +8891,7 @@ OIMO.SAPBroadPhase.prototype.addProxy = function (proxy) {
         this.axesD[2].addElements(p.min[2],p.max[2]);
         p.belongsTo=1;
         this.numElementsD+=2;
-        }else{
+    }else{
         this.axesS[0].addElements(p.min[0],p.max[0]);
         this.axesS[1].addElements(p.min[1],p.max[1]);
         this.axesS[2].addElements(p.min[2],p.max[2]);
@@ -9462,81 +9479,81 @@ OIMO.DBVTBroadPhase.prototype.addProxy = function (proxy) {
     var newLeaves=[];// vector
     newLeaves.length = this.maxLeaves;
     for(var i=0;i<this.numLeaves;i++){
-    newLeaves[i]=this.leaves[i];
+        newLeaves[i]=this.leaves[i];
     }
     this.leaves=newLeaves;
-    }
-    this.leaves[this.numLeaves++]=p.leaf;
+}
+this.leaves[this.numLeaves++]=p.leaf;
 }
 OIMO.DBVTBroadPhase.prototype.removeProxy = function (proxy) {
     var p=(proxy);
     this.tree.deleteLeaf(p.leaf);
     for(var i=0;i<this.numLeaves;i++){
-    if(this.leaves[i]==p.leaf){
-    this.leaves[i]=this.leaves[--this.numLeaves];
-    this.leaves[this.numLeaves]=null;
-    return;
-    }
+        if(this.leaves[i]==p.leaf){
+            this.leaves[i]=this.leaves[--this.numLeaves];
+            this.leaves[this.numLeaves]=null;
+            return;
+        }
     }
 }
 OIMO.DBVTBroadPhase.prototype.collectPairs = function () {
     if(this.numLeaves<2)return;
     for(var i=0;i<this.numLeaves;i++){
-    var leaf=this.leaves[i];
-    var trueB=leaf.proxy.aabb;
-    var leafB=leaf.aabb;
-    if(
-    trueB.minX<leafB.minX||trueB.maxX>leafB.maxX||
-    trueB.minY<leafB.minY||trueB.maxY>leafB.maxY||
-    trueB.minZ<leafB.minZ||trueB.maxZ>leafB.maxZ
+        var leaf=this.leaves[i];
+        var trueB=leaf.proxy.aabb;
+        var leafB=leaf.aabb;
+        if(
+            trueB.minX<leafB.minX||trueB.maxX>leafB.maxX||
+            trueB.minY<leafB.minY||trueB.maxY>leafB.maxY||
+            trueB.minZ<leafB.minZ||trueB.maxZ>leafB.maxZ
     ){// the leaf needs correcting
-    var margin=0.1;
-    this.tree.deleteLeaf(leaf);
-    leafB.minX=trueB.minX-margin;
-    leafB.maxX=trueB.maxX+margin;
-    leafB.minY=trueB.minY-margin;
-    leafB.maxY=trueB.maxY+margin;
-    leafB.minZ=trueB.minZ-margin;
-    leafB.maxZ=trueB.maxZ+margin;
-    this.tree.insertLeaf(leaf);
-    this.collide(leaf,this.tree.root);
+            var margin=0.1;
+        this.tree.deleteLeaf(leaf);
+        leafB.minX=trueB.minX-margin;
+        leafB.maxX=trueB.maxX+margin;
+        leafB.minY=trueB.minY-margin;
+        leafB.maxY=trueB.maxY+margin;
+        leafB.minZ=trueB.minZ-margin;
+        leafB.maxZ=trueB.maxZ+margin;
+        this.tree.insertLeaf(leaf);
+        this.collide(leaf,this.tree.root);
     }
-    }
+}
 }
 OIMO.DBVTBroadPhase.prototype.collide = function (node1,node2) {
     var stackCount=2;
     this.stack[0]=node1;
     this.stack[1]=node2;
     while(stackCount>0){
-    var n1=this.stack[--stackCount];
-    var n2=this.stack[--stackCount];
-    var l1=n1.proxy!=null;
-    var l2=n2.proxy!=null;
-    this.numPairChecks++;
-    if(l1&&l2){
-    var s1=n1.proxy.shape;
-    var s2=n2.proxy.shape;
-    var b1=s1.aabb;
-    var b2=s2.aabb;
-    if(
-    s1==s2||
-    b1.maxX<b2.minX||b1.minX>b2.maxX||
-    b1.maxY<b2.minY||b1.minY>b2.maxY||
-    b1.maxZ<b2.minZ||b1.minZ>b2.maxZ||
-    !this.isAvailablePair(s1,s2)
-    ){
-    continue;
-    }
-    this.addPair(s1,s2);
+        var n1=this.stack[--stackCount];
+        var n2=this.stack[--stackCount];
+        var l1=n1.proxy!=null;
+        var l2=n2.proxy!=null;
+        this.numPairChecks++;
+        if(l1&&l2){
+            var s1=n1.proxy.shape;
+            var s2=n2.proxy.shape;
+            var b1=s1.aabb;
+            var b2=s2.aabb;
+            if(
+                s1==s2||
+                b1.maxX<b2.minX||b1.minX>b2.maxX||
+                b1.maxY<b2.minY||b1.minY>b2.maxY||
+                b1.maxZ<b2.minZ||b1.minZ>b2.maxZ||
+                !this.isAvailablePair(s1,s2)
+                ){
+                continue;
+        }
+        this.addPair(s1,s2);
     }else{
-    b1=n1.aabb;
-    b2=n2.aabb;
-    if(
-    b1.maxX<b2.minX||b1.minX>b2.maxX||
-    b1.maxY<b2.minY||b1.minY>b2.maxY||
-    b1.maxZ<b2.minZ||b1.minZ>b2.maxZ
-    ){
-    continue;
+        b1=n1.aabb;
+        b2=n2.aabb;
+        if(
+            b1.maxX<b2.minX||b1.minX>b2.maxX||
+            b1.maxY<b2.minY||b1.minY>b2.maxY||
+            b1.maxZ<b2.minZ||b1.minZ>b2.maxZ
+            ){
+            continue;
     }
     if(stackCount+4>=this.maxStack){// expand the stack
     //this.maxStack<<=1;
@@ -9544,23 +9561,23 @@ OIMO.DBVTBroadPhase.prototype.collide = function (node1,node2) {
     var newStack=[];// vector
     newStack.length = this.maxStack;
     for(var i=0;i<stackCount;i++){
-    newStack[i]=this.stack[i];
+        newStack[i]=this.stack[i];
     }
     this.stack=newStack;
-    }
-    if(l2||!l1&&(n1.aabb.surfaceArea()>n2.aabb.surfaceArea())){
+}
+if(l2||!l1&&(n1.aabb.surfaceArea()>n2.aabb.surfaceArea())){
     this.stack[stackCount++]=n1.child1;
     this.stack[stackCount++]=n2;
     this.stack[stackCount++]=n1.child2;
     this.stack[stackCount++]=n2;
-    }else{
+}else{
     this.stack[stackCount++]=n1;
     this.stack[stackCount++]=n2.child1;
     this.stack[stackCount++]=n1;
     this.stack[stackCount++]=n2.child2;
-    }
-    }
-    }
+}
+}
+}
 }
 /**
 * A node of the dynamic bounding volume tree.
