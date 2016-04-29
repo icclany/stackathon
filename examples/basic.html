@@ -51,15 +51,17 @@
         });
 
         //////////////////////////////////////////////////////////////////////////////////
-        //		add an object and make it move					//
+        //		On click, throw sandbag					//
         //////////////////////////////////////////////////////////////////////////////////
 
         ;
-        var turns = 0;
+        // var turns = 0;
+        world.turns = 0;
         var round = [];
         document.addEventListener('click', function(event){
-        	if (++turns > 8) {
-        		turns = 1;
+            world.turns++;
+        	if (world.turns%8 === 1 && world.turns > 1) {
+        		// world.turns = 1;
         		round.forEach(function (beanbag) {
         			scene.remove(beanbag);
         		});
@@ -72,7 +74,7 @@
 
         	var cloth;
         	var name;
-        	if (turns%2) {
+        	if (world.turns%2) {
         		cloth = new THREE.MeshPhongMaterial({
         			map: THREE.ImageUtils.loadTexture('images/redfabric.jpg'),
         		})
@@ -99,7 +101,7 @@
                  //////////////////////////////////////////////////////////////////////////////////
 
                  // create IOMO.Body from mesh
-                 var body = THREEx.Oimo.createBodyFromMesh(world, mesh, {name: name})
+                 var body = THREEx.Oimo.createBodyFromMesh(world, mesh, {name: name, mass: 1})
 
                  // add an updater for them
                  onRenderFcts.push(function(delta) {
@@ -108,58 +110,6 @@
 
                  round.push(mesh);
               }, false)
-        // (function() {
-        //     for (var i = 0; i < 10; i++) {
-        //         (function() {
-        //             //////////////////////////////////////////////////////////////////////////////////
-        //             //		Sandbags
-        //             //////////////////////////////////////////////////////////////////////////////////
-        //        	  var geometry	= new THREE.BoxGeometry(7,7,2)
-
-        //             var material = new THREE.MeshNormalMaterial()
-
-        //             var cloth = new THREE.MeshPhongMaterial({
-        //                 map: THREE.ImageUtils.loadTexture('images/redfabric.jpg'),
-        //                 normalScale: new THREE.Vector2(0.3, 0.3),
-        //             })
-
-        //             var mesh = new THREE.Mesh(geometry, cloth)
-        //             scene.add(mesh)
-
-        //             // Sandbag positioning: determined by accelerometer
-        //             mesh.position.x = (Math.random() - 0.5) * 40
-        //             mesh.position.y = 50 + (Math.random() - 0.5) * 40
-        //             mesh.position.z = (Math.random() - 0.5) * 40
-
-        //             //////////////////////////////////////////////////////////////////////////////////
-        //             //		create a body for this mesh
-        //             //////////////////////////////////////////////////////////////////////////////////
-
-        //             // create IOMO.Body from mesh
-        //             var body = THREEx.Oimo.createBodyFromMesh(world, mesh)
-
-        //             // add an updater for them
-        //             onRenderFcts.push(function(delta) {
-        //                 THREEx.Oimo.updateObject3dWithBody(mesh, body)
-        //             })
-
-        //             //////////////////////////////////////////////////////////////////////////////////
-        //             //		if body is too low, reset it
-        //             //////////////////////////////////////////////////////////////////////////////////
-
-        //             // if the position.y < -20, reset the position
-        //             onRenderFcts.push(function(delta) {
-        //                 if (mesh.position.y < -20) {
-        //                     mesh.position.x = (Math.random() - 0.5) * 20
-        //                     mesh.position.y = 100 + (Math.random() - 0.5) * 15
-        //                     mesh.position.z = (Math.random() - 0.5) * 20
-        //                     body.resetPosition(mesh.position.x, mesh.position.y, mesh.position.z);
-        //                 }
-        //             })
-        //         })()
-        //     }
-
-        // })()
 
         //////////////////////////////////////////////////////////////////////////////////
         //		planks								//
@@ -257,10 +207,10 @@
 	    //////////////////////////////////////////////////////////////////////////////////
 	    
 	    
-	    var iomoStats   = new THREEx.Oimo.Stats(world)
-	    document.body.appendChild(iomoStats.domElement)
+	    var scoreboard   = new THREEx.Oimo.Stats(world)
+	    document.body.appendChild(scoreboard.domElement)
 	    onRenderFcts.push(function(delta){
-	    	iomoStats.update()
+	    	scoreboard.update()
 	    });
 
 

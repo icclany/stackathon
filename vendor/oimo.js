@@ -100,6 +100,7 @@ OIMO.World = function(TimeStep, BroadPhaseType, Iterations, NoStat){
 
 };
 var score = {red: 0, yellow: 0};
+var turnCount;
 OIMO.World.prototype = {
     constructor: OIMO.World,
     /**
@@ -250,17 +251,19 @@ getByName:function(name){
     /**
     * I will proceed only time step seconds time of World.
     */
+    turns: 0,
     step: function() {
+
         var time0, time1, time2, time3;
-
         if (!this.isNoStat) time0 = Date.now();
-
+        console.log("TURNS!")
+        console.log(this.turns)
+        turnCount = this.turns;
         var body = this.rigidBodies;
-
         while (body !== null) {
             body.addedToIsland = false;
             if (body.sleeping && body.name.length) {
-                console.log(body.name, body);
+                // console.log(body.name, body);
                 var p = body.position;
                 var sp = body.sleepPosition;
                 if (p.x === sp.x || p.y === sp.y || p.z === sp.z) {
@@ -270,25 +273,13 @@ getByName:function(name){
                             if (body.sleepPosition.z < 0 && body.sleepPosition.z > -.2) {
                                 if (body.sleepPosition.x < .06 && body.sleepPosition.x > -.06) {
                                     score[body.name.slice(0,-4)] += 3;
-
                                 } else score[body.name.slice(0,-4)]++;
                             } else score[body.name.slice(0,-4)]++;
-                            console.log(score);
-                            body.addedToIsland = true;
+                            body.sleeping = false;
+                            body.allowSleep = false;
                         }
                     }
                 }
-                // if (body.linearVelocity.testZero() || body.angularVelocity.testZero() || body.position.testDiff(body.sleepPosition) || body.orientation.testDiff(body.sleepOrientation)) { body.awake(); } // awake the body
-                // var lv = body.linearVelocity;
-                // var av = body.angularVelocity;
-                
-                // var o = body.orientation;
-                // var so = body.sleepOrientation;
-
-                
-                // body.allowSleep = false;
-                // body.sleeping = false;
-                // // body.awake();
             }
             body = body.next;
         }
@@ -1463,7 +1454,6 @@ OIMO.Performance = function(world){
 	this.parent = world;
 	this.infos = new OIMO_ARRAY_TYPE(13);
 	this.f = [0,0,0];
-
     this.fps=0;
     this.broadPhaseTime=0;
     this.narrowPhaseTime=0;
@@ -1482,15 +1472,7 @@ OIMO.Performance.prototype = {
       "FPS: HI IRIS fps<br><br>",
       "RED Score: "+ score.red+"<br>",
       "YELLOW Score: "+score.yellow+"<br>",
-      "paircheck "+this.parent.broadPhase.numPairChecks+"<br>",
-      "contact &nbsp;&nbsp;"+this.parent.numContactPoints+"<br>",
-      "island &nbsp;&nbsp;&nbsp;"+this.parent.numIslands +"<br><br>",
-      "Time in ms <br>",
-      "broad-phase &nbsp;"+this.broadPhaseTime + "<br>",
-      "narrow-phase "+this.narrowPhaseTime + "<br>",
-      "solving &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+this.solvingTime + "<br>",
-      "updating &nbsp;&nbsp;&nbsp;&nbsp;"+this.updatingTime + "<br>",
-      "total &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+this.totalTime
+      "ROUND: "+Math.ceil(turnCount/8)+"<br>"
       ].join("\n");
       return info;
   },
