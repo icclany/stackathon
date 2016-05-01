@@ -21,13 +21,13 @@
         camera.lookAt(scene.position)
 
         // MUSIC
-        // var sound=new Audio("music/Already_did_that.mp3");
-        // sound.play();
+        var sound = new Audio("music/Already_did_that.mp3");
+        sound.play();
 
         //////////////////////////////////////////////////////////////////////////////////
         //      oimo world                          //
         //////////////////////////////////////////////////////////////////////////////////
-        
+
         var world = new OIMO.World(1 / 120, 2, 8)
         var int = setInterval(function() {
             world.step()
@@ -40,32 +40,7 @@
         //      Ground                              //
         //////////////////////////////////////////////////////////////////////////////////
 
-        // Terrain (commented out)
-        // var heightMap = THREEx.Terrain.allocateHeightMap(250, 260)
-        // THREEx.Terrain.simplexHeightMap(heightMap)
-        // var geometry = THREEx.Terrain.heightMapToPlaneGeometry(heightMap)
-        // var material = new THREEx.GrassGround({
-        //     repeatX: 5,
-        //     repeatY: 5
-        // }).material;
-        // // var ground = new THREE.Mesh(geometry, material);
-        // // scene.add(ground);
-        // // ground.rotateX(-Math.PI / 2)
-        // // ground.scale.x = 500
-        // // ground.scale.y = 500
-        // // ground.scale.z = 1 * 10
-
-        // var base = new THREE.BoxGeometry(400, 20, 200);
-        // var ground2 = new THREE.Mesh(base, material);
-        // ground2.receiveShadow = true;
-        // ground2.position.y = -base.parameters.height / 2
-        // scene.add(ground2)
-
-        // var ground2 = THREEx.Oimo.createBodyFromMesh(world, ground2, {
-        //     move: false
-        // });
-
-         var geometry = new THREE.BoxGeometry(400, 20, 200);
+        var geometry = new THREE.BoxGeometry(400, 20, 200);
         var material = new THREEx.GrassGround({
             repeatX: 5,
             repeatY: 5
@@ -194,8 +169,8 @@
             x: 0,
             y: 0.95
         }
-        document.addEventListener('mousemove', function(event){
-            mouse.x = (event.clientX / window.innerWidth ) - 0.5
+        document.addEventListener('mousemove', function(event) {
+            mouse.x = (event.clientX / window.innerWidth) - 0.5
             mouse.y = Math.max((event.clientY / window.innerHeight) - 0.5, 0);
         }, false)
         onRenderFcts.push(function(delta, now) {
