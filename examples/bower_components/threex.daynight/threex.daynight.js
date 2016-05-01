@@ -62,6 +62,7 @@ THREEx.DayNight.SunLight	= function(){
 
 		var phase	= THREEx.DayNight.currentPhase(sunAngle)
 		if( phase === 'day' ){
+			light.intensity = 2;
 			light.color.set("rgb(255,"+ (Math.floor(Math.sin(sunAngle)*200)+55) + "," + (Math.floor(Math.sin(sunAngle)*200)) +")");
 		}else if( phase === 'twilight' ){
 		        light.intensity = 1;

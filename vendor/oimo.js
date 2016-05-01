@@ -256,8 +256,6 @@ getByName:function(name){
 
         var time0, time1, time2, time3;
         if (!this.isNoStat) time0 = Date.now();
-        console.log("TURNS!")
-        console.log(this.turns)
         turnCount = this.turns;
         var body = this.rigidBodies;
         while (body !== null) {

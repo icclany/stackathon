@@ -1,4 +1,4 @@
-var THREEx	= THREEx	|| {}
+var THREEx	= THREEx || {}
 
 THREEx.GrassGround	= function(opts){
 	// handle default arguments
@@ -31,4 +31,4 @@ THREEx.GrassGround	= function(opts){
 	return object3D;
 }
 
-THREEx.GrassGround.baseUrl	= "../"
+// THREEx.GrassGround.baseUrl	= "../"

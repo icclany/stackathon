@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<script src='vendor/require.js/require.js'></script>
+<script src='vendor/three.js/build/three.min.js'></script>
+<script src='../vendor/oimo.js'></script>
+<script src='../threex.oimo.js'></script>
+<script src='vendor/three.js/examples/simplexnoise.js'></script>
+
+
+<body style='margin: 0px; background-color: #bbbbbb; overflow: hidden;'>
+    <script>
+    require(['../package.require.js', 'bower_components/threex.crates/package.require.js', 'bower_components/threex.grassground/package.require.js', 'bower_components/threex.grass/package.require.js', 'bower_components/threex.daynight/package.require.js', 'bower_components/threex.terrain/package.require.js'], function() {
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor('lightgrey')
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        var onRenderFcts = [];
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1000)
+        camera.position.z = 100
+        camera.lookAt(scene.position)
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      oimo world                          //
+        //////////////////////////////////////////////////////////////////////////////////
+
+        var world = new OIMO.World(1 / 120, 2, 8)
+        var int = setInterval(function() {
+            world.step()
+        }, 1000 / 60);
+
+        document.addEventListener('keydown', function(event) {
+            clearInterval(int);
+        }, false)
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      Ground                              //
+        //////////////////////////////////////////////////////////////////////////////////
+
+        var heightMap = THREEx.Terrain.allocateHeightMap(250, 260)
+        THREEx.Terrain.simplexHeightMap(heightMap)
+
+        var geometry = THREEx.Terrain.heightMapToPlaneGeometry(heightMap)
+        var material = new THREEx.GrassGround({
+            repeatX: 5,
+            repeatY: 5
+        }).material;
+        var ground = new THREE.Mesh(geometry, material);
+        scene.add(ground);
+        ground.rotateX(-Math.PI / 2)
+        ground.scale.x = 500
+        ground.scale.y = 500
+        ground.scale.z = 1 * 10
+
+        var base = new THREE.BoxGeometry(400, 20, 200);
+        var ground2 = new THREE.Mesh(base, material);
+        ground2.receiveShadow = true;
+        ground2.position.y = -base.parameters.height / 2
+        scene.add(ground) + 1
+
+        var ground2 = THREEx.Oimo.createBodyFromMesh(world, ground2, {
+            move: false
+        });
+
+        // // load the texture
+        // var textureUrl = THREEx.createGrassTufts.baseUrl + 'images/flowers01.png'
+        // grass.material.map = THREE.ImageUtils.loadTexture(textureUrl)
+        // material.alphaTest = 0.5
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      On click, throw sandbag                 //
+        //////////////////////////////////////////////////////////////////////////////////
+
+        ;
+        // var turns = 0;
+        world.turns = 0;
+        var round = [];
+        document.addEventListener('click', function(event) {
+            world.turns++;
+            if (world.turns % 8 === 1 && world.turns > 1) {
+                round.forEach(function(beanbag) {
+                    scene.remove(beanbag);
+                });
+                round = [];
+            }
+
+            var geometry = new THREE.BoxGeometry(7, 7, 2)
+
+            var material = new THREE.MeshNormalMaterial()
+
+            var cloth;
+            var name;
+            if (world.turns % 2) {
+                cloth = new THREE.MeshPhongMaterial({
+                    map: THREE.ImageUtils.loadTexture('images/redfabric.jpg'),
+                })
+                name = 'red-bag'
+            } else {
+                cloth = new THREE.MeshPhongMaterial({
+                    map: THREE.ImageUtils.loadTexture('images/yellowfabric.jpg'),
+                })
+                name = 'yellow-bag'
+            }
+
+            var mesh = new THREE.Mesh(geometry, cloth)
+            scene.add(mesh)
+
+            // Sandbag positioning: determined by accelerometer
+            mesh.rotation.z = Math.PI / 4;
+            mesh.rotation.x = Math.PI / 4;
+            mesh.position.x = (Math.random() - 0.5) * 40
+            mesh.position.y = 50 + (Math.random() - 0.5) * 40
+            mesh.position.z = (Math.random() - 0.5) * 40
+
+            //////////////////////////////////////////////////////////////////////////////////
+            //      create a body for this mesh
+            //////////////////////////////////////////////////////////////////////////////////
+
+            // create IOMO.Body from mesh
+            var body = THREEx.Oimo.createBodyFromMesh(world, mesh, {
+                name: name,
+                mass: 1
+            })
+
+            // add an updater for them
+            onRenderFcts.push(function(delta) {
+                THREEx.Oimo.updateObject3dWithBody(mesh, body)
+            })
+
+            round.push(mesh);
+        }, false)
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      planks                              //
+        //////////////////////////////////////////////////////////////////////////////////
+        ;
+        (function() {
+            var planks = [];
+            for (var i = -20; i <= 20; i++) {
+                var plank = THREEx.Crates.createCrate2();
+                if (Math.abs(i) < 6) {
+                    plank.scale.y = 50;
+                    plank.position.z = 14.2;
+                    plank.position.y = 5.2;
+                } else {
+                    plank.scale.y = 80;
+                    plank.position.y = 10;
+                }
+                plank.scale.z = 10;
+                plank.rotation.x = 1.9;
+                plank.position.x = i;
+                planks.push(plank);
+            }
+
+            for (var j = -6; j <= 6; j++) {
+                var topPlank = THREEx.Crates.createCrate2();
+
+                topPlank.scale.y = 18;
+                topPlank.position.z = -29.5;
+                topPlank.position.y = 20.05;
+
+                topPlank.scale.z = 10;
+                topPlank.rotation.x = 1.9;
+                topPlank.position.x = j;
+                planks.push(topPlank);
+            }
+
+            planks.forEach(plank => {
+                scene.add(plank)
+                THREEx.Oimo.createBodyFromMesh(world, plank, {
+                    move: false
+                })
+            })
+        })()
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      Camera Controls                         //
+        //////////////////////////////////////////////////////////////////////////////////
+        var mouse = {
+            x: 0,
+            y: 0.95
+        }
+        document.addEventListener('mousemove', function(event) {
+            mouse.x = (event.clientX / window.innerWidth) - 0.5
+            mouse.y = Math.max((event.clientY / window.innerHeight), 0);
+        }, false)
+        onRenderFcts.push(function(delta, now) {
+            camera.position.x += (mouse.x * 100 - camera.position.x) * (delta * 3)
+            camera.position.y += (mouse.y * 60 - camera.position.y) * (delta * 3)
+            camera.lookAt(scene.position)
+        })
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      sunAngle                                //
+        //////////////////////////////////////////////////////////////////////////////////
+
+        var sunAngle = -2 / 6 * Math.PI * 2;
+        onRenderFcts.push(function(delta, now) {
+            var dayDuration = 5 // nb seconds for a full day cycle
+            if (sunAngle < 1.5) sunAngle += delta / dayDuration * Math.PI * 2
+        })
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      directionalLight                        //
+        //////////////////////////////////////////////////////////////////////////////////
+
+
+        var sunLight = new THREEx.DayNight.SunLight()
+        scene.add(sunLight.object3d)
+        onRenderFcts.push(function(delta, now) {
+            sunLight.update(sunAngle)
+        })
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      skydom                              //
+        //////////////////////////////////////////////////////////////////////////////////
+
+        var skydom = new THREEx.DayNight.Skydom()
+        scene.add(skydom.object3d)
+        onRenderFcts.push(function(delta, now) {
+            skydom.update(sunAngle)
+        })
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      Show stats                             //
+        //////////////////////////////////////////////////////////////////////////////////
+
+
+        var scoreboard = new THREEx.Oimo.Stats(world)
+        document.body.appendChild(scoreboard.domElement)
+        onRenderFcts.push(function(delta) {
+            scoreboard.update()
+        });
+
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      render the scene                        //
+        //////////////////////////////////////////////////////////////////////////////////
+        onRenderFcts.push(function() {
+            renderer.render(scene, camera);
+        })
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //      loop runner                         //
+        //////////////////////////////////////////////////////////////////////////////////
+        var lastTimeMsec = null
+        requestAnimationFrame(function animate(nowMsec) {
+            // keep looping
+            requestAnimationFrame(animate);
+            // measure time
+            lastTimeMsec = lastTimeMsec || nowMsec - 1000 / 60
+            var deltaMsec = Math.min(200, nowMsec - lastTimeMsec)
+            lastTimeMsec = nowMsec
+                // call each update function
+            onRenderFcts.forEach(function(onRenderFct) {
+                onRenderFct(deltaMsec / 1000, nowMsec / 1000)
+            })
+        })
+    })
+    </script>
+</body>
