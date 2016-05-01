@@ -6,7 +6,6 @@
 <script src='vendor/three.js/examples/simplexnoise.js'></script>
 
 <body style='margin: 0px; background-color: #bbbbbb; overflow: hidden;'>
-    <!--   <embed async src="music/Already_did_that.mp3" width="180" height="90" loop="false" autostart="false" hidden="true"/> -->
     <script>
     require(['../package.require.js', 'bower_components/threex.crates/package.require.js', 'bower_components/threex.grassground/package.require.js', 'bower_components/threex.grass/package.require.js', 'bower_components/threex.daynight/package.require.js', 'bower_components/threex.terrain/package.require.js', 'bower_components/threex.montainsarena/package.require.js'], function() {
         var renderer = new THREE.WebGLRenderer();
@@ -40,49 +39,30 @@
         //      Ground                              //
         //////////////////////////////////////////////////////////////////////////////////
 
-        // Terrain (commented out)
-        // var heightMap = THREEx.Terrain.allocateHeightMap(250, 260)
-        // THREEx.Terrain.simplexHeightMap(heightMap)
-        // var geometry = THREEx.Terrain.heightMapToPlaneGeometry(heightMap)
-        // var material = new THREEx.GrassGround({
-        //     repeatX: 5,
-        //     repeatY: 5
-        // }).material;
-        // // var ground = new THREE.Mesh(geometry, material);
-        // // scene.add(ground);
-        // // ground.rotateX(-Math.PI / 2)
-        // // ground.scale.x = 500
-        // // ground.scale.y = 500
-        // // ground.scale.z = 1 * 10
-
-        // var base = new THREE.BoxGeometry(400, 20, 200);
-        // var ground2 = new THREE.Mesh(base, material);
-        // ground2.receiveShadow = true;
-        // ground2.position.y = -base.parameters.height / 2
-        // scene.add(ground2)
-
-        // var ground2 = THREEx.Oimo.createBodyFromMesh(world, ground2, {
-        //     move: false
-        // });
-
-         var geometry = new THREE.BoxGeometry(400, 20, 200);
+        var heightMap = THREEx.Terrain.allocateHeightMap(250, 260)
+        THREEx.Terrain.simplexHeightMap(heightMap)
+        var geometry = THREEx.Terrain.heightMapToPlaneGeometry(heightMap)
         var material = new THREEx.GrassGround({
             repeatX: 5,
             repeatY: 5
         }).material;
-        var mesh = new THREE.Mesh(geometry, material);
-        mesh.receiveShadow = true;
-        mesh.position.y = -geometry.parameters.height / 2
-        scene.add(mesh)
-        var ground = THREEx.Oimo.createBodyFromMesh(world, mesh, {
+        var ground = new THREE.Mesh(geometry, material);
+        scene.add(ground);
+        ground.rotateX(-Math.PI / 2)
+        ground.scale.x = 500
+        ground.scale.y = 500
+        ground.scale.z = 1 * 10
+
+        var base = new THREE.BoxGeometry(400, 20, 200);
+        var ground2 = new THREE.Mesh(base, material);
+        ground2.receiveShadow = true;
+        ground2.position.y = -base.parameters.height / 2
+        scene.add(ground2)
+
+        var ground2 = THREEx.Oimo.createBodyFromMesh(world, ground2, {
             move: false
         });
 
-        ////////////////////////////////////////////////////////////////////////////////
-        //      Mountains                              //
-        //////////////////////////////////////////////////////////////////////////////////
-        var mountains = new THREEx.MontainsArena()
-        scene.add(mountains);
         //////////////////////////////////////////////////////////////////////////////////
         //      On click, throw sandbag                 //
         //////////////////////////////////////////////////////////////////////////////////
