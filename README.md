@@ -1,3 +1,3 @@
 # this is our stackathon project
 
-![Cornhole](http://imgur.com/cfUAqs1)
+![Cornhole](http://i.imgur.com/cfUAqs1.jpg)
